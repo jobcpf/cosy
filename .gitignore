@@ -1,0 +1,39 @@
+#exclude data files
+#../static
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.cache
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# PyCharm stuff
+.idea
+
+# Sphinx build dir
+_build
+
+# Sqlite database files
+*.sqlite
