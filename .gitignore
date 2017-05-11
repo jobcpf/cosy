@@ -35,5 +35,6 @@ nosetests.xml
 # Sphinx build dir
 _build
 
-# Sqlite database files
+# Database files
 *.sqlite
+*.sql

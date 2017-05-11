@@ -51,29 +51,27 @@ now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
 token_url = '/o/token/'
 api_base = '/api/0.1'
 
+# initial API access call to retrieve API Config
+api_conf = '/sys/api/'
 
-sys_conf = '/sys/conf/'
-sys_event_type = '/sys/et/'
-
-comm = '/comm/%s/' % control_unit # TODO: populate all API calls aside from this from initial comm
-env_pol = '/env/pol/%s/' % control_unit
-env_conf = '/env/conf/'
-
-mets = '/mets/%s/' % control_unit
-metr = '/met/' # requires meter id
-met_pol = '/met/pol/%s/' % control_unit
-met_conf = '/met/conf/'
+#sys_conf = '/sys/conf/'
+#sys_event_type = '/sys/et/'
+#
+#comm = '/comm/%s/' % control_unit # TODO: populate all API calls aside from this from initial comm
+#env_pol = '/env/pol/%s/' % control_unit
+#env_conf = '/env/conf/'
+#
+#mets = '/mets/%s/' % control_unit
+#metr = '/met/' # requires meter id
+#met_pol = '/met/pol/%s/' % control_unit
+#met_conf = '/met/conf/'
 
 ## Database - sqlite
 DB_API = 'cosy_api.sqlite' # database for API access credentials - TODO: encrypt
 DB_DATA = 'cosy_data.sqlite' # database for system data
 
 
-
-
 ### Temp
-
-
 
 # Application Credentials
 client_id = '4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW'

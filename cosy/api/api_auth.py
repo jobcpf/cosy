@@ -29,6 +29,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 def get_new_token(refresh_token = False):
     """
     Retrieve an access token for API using refresh_token if available or via username:password from db.user
+    return token3, False or Status Code
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -40,8 +41,13 @@ def get_new_token(refresh_token = False):
     
     else: # use username:password from db.user
         
-        # get (user,password) for authed user from db.auth
+        # get (id,user,password) for authed user from db.auth
         user_details = dat.get_api_user()
+        
+        # check for user details
+        if not user_details :
+            logging.error('%s:%s: No user exists to retrieve token' % (script_file,func_name))
+            user_details = dat.init_user()
         
         # build auth credentials
         params = {'grant_type':'password',
@@ -57,13 +63,11 @@ def get_new_token(refresh_token = False):
         
         if r.headers['Content-Type'] in ['application/json'] :
             
-            # insert toekn into db.auth
+            # insert token into db.auth
             inserted = dat.insert_token(user_details[0], r.json())
             
-            if inserted :
-                return (r.json()['access_token'],r.json()['refresh_token'])
-            else:
-                return inserted
+            # returns token3 or False
+            return inserted
             
         else:
             logging.error('%s:%s: No valid JSON data retrieved from for API Token' % (script_file,func_name,user_details[1]))
