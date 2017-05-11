@@ -24,6 +24,11 @@ Dev:
 Plugins
 ------------------------------------------------------------------------------
 
+Requests (https://github.com/kennethreitz/requests)
+http://docs.python-requests.org/en/latest/
+
+SQLite (https://www.sqlite.org/)
+https://docs.python.org/2/library/sqlite3.html
 
 ------------------------------------------------------------------------------
 Templates

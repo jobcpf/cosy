@@ -27,7 +27,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## DB Structure #################################### DB Structure #################################### DB Structure ##################
 
-db_sql = [
+db_api_sql = [
         """CREATE TABLE IF NOT EXISTS user (
             id INTEGER PRIMARY KEY,
             user TEXT unique NOT NULL,
@@ -55,16 +55,16 @@ db_sql = [
 # create database connection
 def create_connection():
     """
-    Create a database connection to the SQLite database specified by DB_PATH,DB_NAME
+    Create a database connection to the SQLite database specified by DB_PATH,DB_API
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     
-    logging.debug('%s:%s: Create DB Connection to %s' % (script_file,func_name,DB_NAME))
+    logging.debug('%s:%s: Create DB Connection' % (script_file,func_name))
     
     try:
         # connect to DB
-        conn = sqlite3.connect('%s/%s' % (DB_PATH,DB_NAME))
+        conn = sqlite3.connect('%s/%s' % (DB_PATH,DB_API))
         return conn
     
     except Exception as e:
@@ -106,8 +106,8 @@ def init_db():
     # if connection possible
     if conn is not None:
         
-        # iterate db_sql and create tables
-        for create_table_sql in db_sql :
+        # iterate db_api_sql and create tables
+        for create_table_sql in db_api_sql :
         
             # create projects table
             create_table(conn, create_table_sql)
@@ -253,66 +253,3 @@ def get_api_token():
     
     finally:
         conn.close()
-
-
-
-
-
-
-
-
-"""
-# Never do this -- insecure!
-symbol = 'RHAT'
-c.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
-
-# Do this instead
-t = ('RHAT',)
-c.execute('SELECT * FROM stocks WHERE symbol=?', t)
-print c.fetchone()
-
-# Larger example that inserts many records at a time
-purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-             ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
-             ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-            ]
-c.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
-
-Connection objects can be used as context managers that automatically commit or rollback transactions. In the event of an exception, the transaction is rolled back; otherwise, the transaction is committed:
-
-import sqlite3
-
-con = sqlite3.connect(":memory:")
-con.execute("create table person (id integer primary key, firstname varchar unique)")
-
-# Successful, con.commit() is called automatically afterwards
-with con:
-    con.execute("insert into person(firstname) values (?)", ("Joe",))
-
-# con.rollback() is called after the with block finishes with an exception, the
-# exception is still raised and must be caught
-try:
-    with con:
-        con.execute("insert into person(firstname) values (?)", ("Joe",))
-except sqlite3.IntegrityError:
-    print "couldn't add Joe twice"
-
-
-    
-    
-# example
-def dbaccessexample():
-    try:
-        with db:
-            db.execute('''INSERT INTO users(name, phone, email, password)
-                    VALUES(?,?,?,?)''', (name1,phone1, email1, password1))
-    except sqlite3.IntegrityError:
-        print('Record already exists')
-    except Exception as e:
-        # Roll back any change if something goes wrong
-        db.rollback()
-        raise e
-    finally:
-        db.close()
-    
-"""
