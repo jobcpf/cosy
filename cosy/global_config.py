@@ -52,7 +52,7 @@ token_url = '/o/token/'
 api_base = '/api/0.1'
 
 # initial API access call to retrieve API Config
-api_conf = '/sys/api/'
+API_CONF = '/sys/api/'
 
 #sys_conf = '/sys/conf/'
 #sys_event_type = '/sys/et/'

@@ -17,6 +17,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 # Import custom modules
+import api.api_auth as apa
 import data.data_api as dat
 
 ################## Variables #################################### Variables #################################### Variables ##################
@@ -26,68 +27,63 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-
-def api_config(token3,api_call):
+def api_call(api_call, user_id = False):
     """
     Retrieve API Access details from API using Token Auth
+    > user_id, 'api call identifier'
+    < json, http status code, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Retrieve API Access details from API using Token Auth' % (script_file,func_name))
     
-    # unpack token3
-    user_id = token3[0]
-    auth_token = token3[1]
+    # get token with or without user ID
+    if user_id :
+        # get last registered token from db by user ID
+        token3 = dat.get_api_token(user_id)
+    else:
+        # get last registered token from db
+        token3 = dat.get_api_token()
     
-    # build auth header
-    auth_header = {'Authorization': 'Bearer %s' % auth_token}
-    
-    # make request
-    r = requests.get('%s%s%s' % (base_url,api_base,api_call), headers=auth_header)
-    
-    # return based on response
-    if r.status_code == requests.codes.ok :
+    try:
+        get_new_token = False
         
+        # test if token returned
+        if token3 is not None :
+            # build auth header
+            auth_header = {'Authorization': 'Bearer %s' % token3[1]}
+            
+            # make request
+            r = requests.get('%s%s%s' % (base_url,api_base,api_call), headers=auth_header)
+            
+            # return based on response
+            if r.status_code == requests.codes.unauthorized:
+                logging.error('%s:%s: API data retrieval unauthorised. Status Code: %s' % (script_file,func_name,r.status_code))
+                
+                get_new_token = True
+                
+        if token3 is None or get_new_token:
+            # get new token (refresh > u:p)
+            token3 = apa.get_new_token(token3) # get new token and add to db
+            
+            # build auth header
+            auth_header = {'Authorization': 'Bearer %s' % token3[1]}
+            
+            # make request
+            r = requests.get('%s%s%s' % (base_url,api_base,api_call), headers=auth_header)
+            
         if r.headers['Content-Type'] in ['application/json'] :
             
             # update db.apiaccessconfig
-            return dat.insert_api_config(user_id,r.json())
-            
-        else:
-            logging.error('%s:%s: No valid JSON data retrieved from API' % (script_file,func_name))
-            return False
-    else:
-        logging.error('%s:%s: API data retrieval failed with status code %s' % (script_file,func_name,r.status_code))
-        return r.status_code
-
-    
-def api_access(auth_token,api_call):
-    """
-    Retrieve data from API using Token Auth
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Retrieve data from API using Token Auth' % (script_file,func_name))
-    
-    # build auth header
-    auth_header = {'Authorization': 'Bearer %s' % auth_token}
-    
-    # make request
-    r = requests.get('%s%s%s' % (base_url,api_base,api_call), headers=auth_header)
-    
-    # return based on response
-    if r.status_code == requests.codes.ok :
-        
-        if r.headers['Content-Type'] in ['application/json'] :
-            
             return r.json()
             
         else:
             logging.error('%s:%s: No valid JSON data retrieved from API' % (script_file,func_name))
             return False
-    else:
-        logging.error('%s:%s: API data retrieval failed with status code %s' % (script_file,func_name,r.status_code))
-        return r.status_code
+    
+    except requests.exceptions.ConnectionError as e:
+        logging.error('%s:%s: NewConnectionError' % (script_file,func_name))
+        return False
 
 
 

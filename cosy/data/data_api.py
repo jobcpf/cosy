@@ -33,11 +33,11 @@ db_sql_dict = db_api_dict
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-
 def create_connection():
     """
     Create a database connection to the SQLite database specified by DB_PATH,DB_NAME
-    returns connection to db
+    >
+    < connection object, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -53,13 +53,14 @@ def create_connection():
         logging.error('%s:%s: Could not create connection' % (script_file,func_name))
         raise e
     
-    return None
+    return False
 
 
 def create_table(conn, create_table_sql) :
     """
     Create a table from the create_table_sql statement
-    returns True on creation
+    >
+    < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -78,7 +79,8 @@ def create_table(conn, create_table_sql) :
 def init_db():
     """
     Create database for cosy.
-    returns true on creation
+    >
+    < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -136,7 +138,8 @@ def init_user():
     """
     Create initial user credentials for cosy API access.
     TODO: Access user:password from secure file via ssh...
-    returns (userID,user,password)
+    > 
+    < token3 (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -185,7 +188,8 @@ def init_user():
 def insert_token(user_id, token_json):
     """
     Insert API Token for cosy API access.
-    returns token3 (userID, access_token, refresh_token)
+    > user id, token json
+    < token3 (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -240,10 +244,11 @@ def insert_token(user_id, token_json):
     return (user_id, token_json['access_token'], token_json['refresh_token'])
 
 
-def get_api_user():
+def get_api_user(user_id = False):
     """
-    Get user credentials for cosy API access.
-    returns (userID,user,password)
+    Get latest user credentials or credentials of user ID for cosy API access 
+    > opt userID
+    < user3 (userID, user, password)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -255,9 +260,16 @@ def get_api_user():
         
         # cursor
         cur = conn.cursor()
-        cur.execute("SELECT id, user, passwd FROM user ORDER BY created_at DESC")
         
-        return cur.fetchone()
+        if user_id :
+            # get entry for user ID
+            cur.execute("SELECT id, user, passwd FROM user WHERE id = ? ORDER BY created_at DESC", (user_id, ))
+            user3 = cur.fetchone()
+        
+        else:
+            # get latest user entry
+            cur.execute("SELECT id, user, passwd FROM user ORDER BY created_at DESC")
+            user3 = cur.fetchone()
         
     except Exception as e:
         # Roll back any change if something goes wrong
@@ -265,12 +277,15 @@ def get_api_user():
     
     finally:
         conn.close()
+    
+    return user3
+    
 
-
-def get_api_token():
+def get_api_token(user_id = False):
     """
     Get token from db.auth for cosy API access.
-    returns token3 (userID, access_token, refresh_token)
+    > 
+    < token3 (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -280,9 +295,14 @@ def get_api_token():
         # connect to / create db
         conn = create_connection()
         
-        # cursor
-        cur = conn.cursor()
-        cur.execute("SELECT user_id, access_token, refresh_token FROM auth ORDER BY created_at DESC")
+        if user_id :
+            # cursor
+            cur = conn.cursor()
+            cur.execute("SELECT user_id, access_token, refresh_token FROM auth WHERE user_id = ? ORDER BY created_at DESC",(user_id,))
+        else:
+            # cursor
+            cur = conn.cursor()
+            cur.execute("SELECT user_id, access_token, refresh_token FROM auth ORDER BY created_at DESC")
         
         token3 = cur.fetchone()
         
@@ -300,11 +320,13 @@ def insert_api_config(user_id, api_json_all):
     """
     Insert or Replace API configuration cosy API access.
     returns True on create
-        
+    > user ID, json
+    < True, False
+    
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Insert or Replace API configuration to db.apiaccessconfig' % (script_file,func_name))
-
+    
     try :
         # connect to / create db
         conn = create_connection()
