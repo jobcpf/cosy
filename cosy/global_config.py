@@ -29,7 +29,7 @@ if ENV == 1 : # dev environment on squirrel
     DB_PATH = '/data/datashare'
     
     ## Path & URL
-    base_url = 'http://172.16.32.40:8000'
+    BASE_URL = 'http://172.16.32.40:8000'
     
     ## logging
     use_logging = True
@@ -48,11 +48,14 @@ control_unit = 1
 now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
 
 # API Auth / Access
-token_url = '/o/token/'
-api_base = '/api/0.1'
+TOKEN_URL = '/o/token/'
+API_BASE = '/api/0.1'
 
 # initial API access call to retrieve API Config
 API_CONF = '/sys/api/'
+
+CU_INIT = 'CUinit'
+API_INIT = 'APIinit'
 
 #sys_conf = '/sys/conf/'
 #sys_event_type = '/sys/et/'
@@ -72,10 +75,6 @@ DB_DATA = 'cosy_data.sqlite' # database for system data
 
 
 ### Temp
-
-# Application Credentials
-client_id = '4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW'
-client_secret = 'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI'
 
 
 

@@ -22,14 +22,15 @@ import sqlite3
 ################## Variables #################################### Variables #################################### Variables ##################
 
 from global_config import * # get global variables
+
+# define working database for module
+db = DB_API
+
+# get database definition dict
+from db_sql import DATABASES
+
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
-# set database
-DB_NAME = DB_API
-
-# set database sql dictionary
-from db_sql import db_api_dict
-db_sql_dict = db_api_dict
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
@@ -41,12 +42,11 @@ def create_connection():
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    
-    logging.debug('%s:%s: Create DB Connection' % (script_file,func_name))
+    #logging.debug('%s:%s: Create DB Connection' % (script_file,func_name))
     
     try:
         # connect to DB
-        conn = sqlite3.connect('%s/%s' % (DB_PATH,DB_NAME))
+        conn = sqlite3.connect('%s/%s' % (DB_PATH,db))
         return conn
     
     except Exception as e:
@@ -56,138 +56,48 @@ def create_connection():
     return False
 
 
-def create_table(conn, create_table_sql) :
+
+def get_api_user(user_id = False):
     """
-    Create a table from the create_table_sql statement
-    >
-    < True, False
+    Get latest user credentials or credentials of user ID for cosy API access 
+    > opt userID
+    < user3 (userID, user, password)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    
-    try:
-        with conn:
-            conn.execute(create_table_sql)
-        
-    except Exception as e:
-        logging.error('%s:%s: Could not create table' % (script_file,func_name))
-        raise e
-    
-    return True
-
-
-def init_db():
-    """
-    Create database for cosy.
-    >
-    < True, False
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Create initial database' % (script_file,func_name))
-    
-    # connect to / create db
-    conn = create_connection()
-    
-    # if connection possible
-    if conn is not None:
-        
-        # get execute order list from 'sort' value
-        exec_order = sorted(db_api_dict, key=lambda x: db_api_dict[x]['sort'])
-        
-        # Get sorted order table build data
-        for table in exec_order:
-            
-            # initiate CREATE TABLE sql
-            sql_str = "" + "CREATE TABLE IF NOT EXISTS %s (" % table
-            
-            for pk, detail in db_api_dict[table]['pk'].iteritems():
-                sql_str = sql_str + "%s %s" % (pk, detail)
-            
-            if 'apifields' in db_api_dict[table] :
-                for field, detail in db_api_dict[table]['apifields'].iteritems():
-                    sql_str += ", %s %s" % (field, detail)
-            
-            if 'appendfields' in db_api_dict[table] :
-                for field, detail in db_api_dict[table]['appendfields'].iteritems():
-                    sql_str += ", %s %s" % (field, detail)
-            
-            if 'contraints' in db_api_dict[table] :
-                for constraint, detail in db_api_dict[table]['contraints'].iteritems():
-                    sql_str += ", %s %s" % (constraint, detail)
-            
-            # terminate sql statement
-            sql_str += ");"
-            
-            # create table
-            create_table(conn, sql_str)
-    
-        # Committing changes and closing the connection to the database file
-        conn.commit()
-        conn.close()
-        
-    else:
-        print("Error! cannot create the database connection.")
-        logging.error('%s:%s: Cannot create database connection.' % (script_file,func_name))
-        return False
-
-    return True
-
-
-def init_user():
-    """
-    Create initial user credentials for cosy API access.
-    TODO: Access user:password from secure file via ssh...
-    > 
-    < token3 (userID, access_token, refresh_token)
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Create initial user credentials' % (script_file,func_name))
+    logging.debug('%s:%s: Get user credentials' % (script_file,func_name))
 
     try :
         # connect to / create db
         conn = create_connection()
         
-        ### temp
-        user = 'apitest'
-        passwd = 'buggeryouall'
+        # cursor
+        cur = conn.cursor()
         
-        # generate values to insert
-        user_detail = (user,passwd,datetime.now())
+        if user_id :
+            # get entry for user ID
+            cur.execute("SELECT id, user, passwd FROM user WHERE id = ? ORDER BY created_at DESC LIMIT 1", (user_id, ))
+            user3 = cur.fetchone()
         
-        # connection object as context manager
-        with conn:
-            cur = conn.cursor()
-            cur.execute('INSERT OR REPLACE INTO user(user, passwd, created_at) VALUES (?,?,?)',user_detail)
-            
-            # get userID toreturn
-            userID = cur.lastrowid
-            
-        #### Test
-        #for row in conn.execute('SELECT * FROM user ORDER BY id'):
-        #    print row
-            
-    except sqlite3.IntegrityError: # TODO: uneccesary as INSERT OR REPLACE should prevent sqlite3.IntegrityError
-        # connection object will roll back db
-        logging.error('%s:%s: user already exists: %s' % (script_file,func_name,user))
-        
-        cur.execute("SELECT id, user, passwd FROM user WHERE user = ?", (user,))
-        return cur.fetchone()
+        else:
+            # get latest user entry
+            cur.execute("SELECT id, user, passwd FROM user ORDER BY created_at DESC LIMIT 1")
+            user3 = cur.fetchone()
         
     except Exception as e:
-        # connection object will rool back db
+        # Roll back any change if something goes wrong
         raise e
     
     finally:
         conn.close()
-        
-    return (userID,user,passwd)
+    
+    return user3
+
 
 
 def insert_token(user_id, token_json):
     """
-    Insert API Token for cosy API access.
+    Insert API Token for cosy API access. (Called from api_auth.get_new_token)
     > user id, token json
     < token3 (userID, access_token, refresh_token)
     
@@ -207,9 +117,9 @@ def insert_token(user_id, token_json):
         insert_values = []
         
         # dynamic fields/values
-        for key,val in db_sql_dict[tablename]['apifields'].iteritems() :
+        for key,val in DATABASES[db][tablename]['vfields'].iteritems() :
             insert_fields += "%s, " % key
-            insert_values.append(token_json[key])
+            insert_values.append(token_json.get(key,None))
         
         # static fields/values
         insert_fields += "%s, " % 'created_at'
@@ -219,7 +129,7 @@ def insert_token(user_id, token_json):
         insert_values.append(user_id)
         
         # end field statement
-        insert_fields = insert_fields[:-2]
+        insert_fields = insert_fields[:-2] # loses ', ' from end of sql fields list
         
         # connection object as context manager
         with conn:
@@ -243,49 +153,13 @@ def insert_token(user_id, token_json):
         
     return (user_id, token_json['access_token'], token_json['refresh_token'])
 
-
-def get_api_user(user_id = False):
-    """
-    Get latest user credentials or credentials of user ID for cosy API access 
-    > opt userID
-    < user3 (userID, user, password)
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Get user credentials' % (script_file,func_name))
-
-    try :
-        # connect to / create db
-        conn = create_connection()
-        
-        # cursor
-        cur = conn.cursor()
-        
-        if user_id :
-            # get entry for user ID
-            cur.execute("SELECT id, user, passwd FROM user WHERE id = ? ORDER BY created_at DESC", (user_id, ))
-            user3 = cur.fetchone()
-        
-        else:
-            # get latest user entry
-            cur.execute("SELECT id, user, passwd FROM user ORDER BY created_at DESC")
-            user3 = cur.fetchone()
-        
-    except Exception as e:
-        # Roll back any change if something goes wrong
-        raise e
-    
-    finally:
-        conn.close()
-    
-    return user3
     
 
 def get_api_token(user_id = False):
     """
     Get token from db.auth for cosy API access.
     > 
-    < token3 (userID, access_token, refresh_token)
+    < token3 (userID, access_token, refresh_token), None
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -298,12 +172,13 @@ def get_api_token(user_id = False):
         if user_id :
             # cursor
             cur = conn.cursor()
-            cur.execute("SELECT user_id, access_token, refresh_token FROM auth WHERE user_id = ? ORDER BY created_at DESC",(user_id,))
+            cur.execute("SELECT user_id, access_token, refresh_token FROM auth WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",(user_id,))
         else:
             # cursor
             cur = conn.cursor()
-            cur.execute("SELECT user_id, access_token, refresh_token FROM auth ORDER BY created_at DESC")
+            cur.execute("SELECT user_id, access_token, refresh_token FROM auth ORDER BY created_at DESC LIMIT 1")
         
+        # returns (user_id, access_token, refresh_token) or None
         token3 = cur.fetchone()
         
     except Exception as e:
@@ -316,7 +191,8 @@ def get_api_token(user_id = False):
     return token3
 
 
-def insert_api_config(user_id, api_json_all):
+
+def insert_api_config(user_id, json):
     """
     Insert or Replace API configuration cosy API access.
     returns True on create
@@ -327,37 +203,57 @@ def insert_api_config(user_id, api_json_all):
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Insert or Replace API configuration to db.apiaccessconfig' % (script_file,func_name))
     
+    table = 'apiaccessconfig'
+    
     try :
+        # initial conditions
+        insert_val_list = []
+        
+        ## build field list
+        
+        # initial conditions
+        insert_fields = ""
+        
+        # dynamic fields/values
+        for key,val in DATABASES[db][table]['vfields'].iteritems() :
+            insert_fields += "%s, " % key
+        
+        # static fields/values
+        insert_fields += "%s, " % 'created_at'
+        insert_fields += "%s, " % 'user_id'
+        
+        # end field statement
+        insert_fields = insert_fields[:-2] # loses ', ' from end of sql fields list
+        
+        ## build insert values from json
+        for api_json in json:
+            
+            # initial conditions
+            insert_values = []
+            
+            # dynamic fields/values
+            for key,val in DATABASES[db][table]['vfields'].iteritems() :
+                insert_values.append(api_json.get(key,None))
+            
+            # static fields/values
+            insert_values.append(datetime.now())
+            insert_values.append(user_id)
+            
+            # stack to detail list
+            insert_val_list.append(tuple(insert_values))
+            
+        # build insert holder based on values
+        insert_holder = "?, " * len(insert_values)
+        
         # connect to / create db
         conn = create_connection()
         
-        api_detail = []
-        
-        for api_json in api_json_all:
-            
-            # extract values from JSON etc.
-            #user_id = user_id
-            apiid = api_json['id']
-            api_url = api_json['api_url']
-            api_version = api_json['api_version']
-            refresh = api_json['refresh']
-            init = api_json['init']
-            cs_required = api_json['cs_required']
-            tr_required = api_json['tr_required']
-            mt_required = api_json['mt_required']
-            created_at = datetime.now()
-            
-            # generate values to insert
-            api_row = (apiid, user_id, api_url, api_version, refresh, init, cs_required, tr_required, mt_required, created_at)
-            
-            api_detail.append(api_row)
-        
         # connection object as context manager
         with conn:
-            conn.executemany('INSERT OR REPLACE INTO apiaccessconfig(apiid, user_id, api_url, api_version, refresh, init, cs_required, tr_required, mt_required, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',api_detail)
-        
-        #### Test
-        #for row in conn.execute('SELECT * FROM apiaccessconfig ORDER BY apiid'):
+            conn.executemany("INSERT OR REPLACE INTO {tn}({tf}) VALUES ({ih})".format(tn=table,tf=insert_fields,ih=insert_holder[:-2]),insert_val_list)
+            
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn} ORDER BY id'.format(tn=table)):
         #    print row
         
     except sqlite3.IntegrityError:
@@ -365,6 +261,18 @@ def insert_api_config(user_id, api_json_all):
         logging.error('%s:%s: item already exists' % (script_file,func_name))
         return False
 
+    except sqlite3.OperationalError as e:
+        # connection object will rool back db
+        logging.error('%s:%s: SQLite Operational Error' % (script_file,func_name))
+        raise e
+        #return False
+
+    except sqlite3.ProgrammingError as e:
+        # connection object will rool back db
+        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        raise e
+        #return False
+    
     except Exception as e:
         # connection object will rool back db
         raise e

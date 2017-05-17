@@ -21,6 +21,7 @@ import data.data_api as dat
 ################## Variables #################################### Variables #################################### Variables ##################
 
 from global_config import * # get global variables
+from auth import CLIENT_ID, CLIENT_SECRET
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
@@ -28,20 +29,28 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 # create database connection
 def get_new_token(token3 = False):
     """
-    Retrieve an access token for API using refresh_token if available or via username:password from db.user
-    > opt token3 
+    Retrieve an access token for API:
+    1. use refresh_token if token3 passed, OR
+    2. use username:password from db.user if 401 or no token3
+    3. insert token into db.auth
+    > [token3 ]
     < token3 (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Retrieve API access token' % (script_file,func_name))
     
-    # logic for refresh token vs up authorisation control
+    # logic for refresh token vs u/p authorisation control
     up_auth = True
+    user_id = False
     
-    ## request auth token using refresh token
-    if token3 : # use refresh_token
+    ## if token3 passed request auth token using refresh token
+    if token3 :
         
+        # get id for token user
+        user_id = token3[0]
+        
+        # dont use u/p auth
         up_auth = False
         
         # get user id to pass
@@ -52,25 +61,26 @@ def get_new_token(token3 = False):
                 'refresh_token':token3[2]
                 }
         
-        r = requests.post('%s%s' % (base_url,token_url), data=params, auth=HTTPBasicAuth(client_id, client_secret))
+        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET))
         
-        # test if refresh token call successful & return
+        # test if refresh token call successful
         if r.status_code == requests.codes.unauthorized:
             logging.error('%s:%s: Refresh token unauthorised. Status Code: %s' % (script_file, func_name, r.status_code))
+            
+            # revert to u/p auth
             up_auth = True
-        
-        # get (id,user,password) for token user
-        user_details = dat.get_api_user(token3[0])
-    
-    else: # use username:password from db.user
-        
-        # get (id,user,password) for authed user from db.auth
-        user_details = dat.get_api_user()
-        # get user id to pass
-        user_id = user_details[0]
     
     ## request auth token using username:password
     if up_auth :
+        
+        # get (id,user,password) for authed user from db.auth
+        if user_id :
+            user_details = dat.get_api_user(user_id)
+        else:
+            user_details = dat.get_api_user()
+        
+            # get user id to pass
+            user_id = user_details[0]
         
         # check for user details
         if not user_details :
@@ -84,7 +94,7 @@ def get_new_token(token3 = False):
                 }
         
         # make request
-        r = requests.post('%s%s' % (base_url,token_url), data=params, auth=HTTPBasicAuth(client_id, client_secret))
+        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET))
     
     # return based on response
     if r.status_code == requests.codes.ok :

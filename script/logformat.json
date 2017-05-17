@@ -1,0 +1,45 @@
+{
+    "cpf_log" : {
+        "title" : "CPF Log Format",
+        "description" : "Log format used by CPF Development.",
+        "url" : "http://grimblesquirrel.co.uk/log/",
+        "regex" : {
+            "main" : {
+                "pattern" : "^(?<level>\\w+)\\:(?<user>\\w+)\\:(?<timestamp>\\d{4}\\d{2}\\d{2}_\\d{2}\\d{2}\\d{2})\\:\\s*(?<component>\\w+\\.py)\\:(?<function>\\w+)\\:(?<body>.*)$"
+            }
+        },
+        "body-field" : "body",
+        "level-field" : "level",
+        "level" : {
+            "error" : "ERROR",
+            "warning" : "WARNING",
+            "debug": "DEBUG"
+        },
+        "timestamp-field" : "timestamp",
+        "timestamp-format": ["%Y%m%d_%H%M%S"],
+        "value" : {
+            "user" : {
+                "kind" : "string",
+                "identifier" : false,
+                "hidden": true
+            },
+            "component" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "function" : {
+                "kind" : "string",
+                "identifier" : true
+            },
+            "body" : {
+                "kind" : "string",
+                "identifier" : false
+            }
+        },
+        "sample" : [
+            {
+                "line" : "ERROR:root:20170517_092146: data_api.py:init_user: Table does not exist - database file missing?"
+            }
+        ]
+    }
+}

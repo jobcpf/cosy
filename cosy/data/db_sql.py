@@ -5,135 +5,91 @@ Module SQL Data Structures
 @Date: 
 
 """
+################## Variables #################################### Variables #################################### Variables ##################
+
+from global_config import DB_API, DB_DATA
 
 ################## DB Structure #################################### DB Structure #################################### DB Structure ##################
 
-db_api_dict = {
-    'user':{
-        'sort':0,
-        'pk':{
-            'id':'INTEGER PRIMARY KEY',
-        },
-        'apifields':{
-            'user':'TEXT unique NOT NULL',
-            'passwd':'TEXT NOT NULL',
-            'control_unit':'INTEGER',
-        },
-        'appendfields':{
-            'created_at':'TIMESTAMP',
-        }
-    },
-    'auth':{
-        'sort':1,
-        'pk':{
-            'id':'INTEGER PRIMARY KEY',
-        },
-        'apifields':{
-            'access_token':'TEXT NOT NULL',
-            'token_type':'TEXT NOT NULL',
-            'expires_in':'INTEGER',
-            'refresh_token':'TEXT',
-            'scope':'TEXT',
-        },
-        'appendfields':{
-            'created_at':'TIMESTAMP',
-            'user_id':'INTEGER NOT NULL',
-        },
-        'contraints':{
-            'FOREIGN KEY':'(user_id) REFERENCES user (id)',
-        }
-    },
-    'apiaccessconfig':{
-        'sort':2,
-        'pk':{
-            'apiid':'INTEGER PRIMARY KEY',
-        },
-        'apifields':{
-            'api_version':'TEXT NOT NULL',
-            'api_url':'TEXT NOT NULL',
-            'description':'TEXT',
-            'refresh':'INTEGER',
-            'init':'INTEGER DEFAULT 0',
-            'cs_required':'INTEGER DEFAULT 0',
-            'mt_required':'INTEGER DEFAULT 0',
-            'tr_required':'INTEGER DEFAULT 0',
-        },
-        'appendfields':{
-            'created_at':'TIMESTAMP',
-            'user_id':'INTEGER NOT NULL',
-        },
-        'contraints':{
-            'FOREIGN KEY':' (user_id) REFERENCES user (id)',
-        }
-    }
-}
-
-db_api_dict2 = {
-    '0':{
+DATABASES = {
+    DB_API : {
         'user':{
             'sort':0,
             'pk':{
                 'id':'INTEGER PRIMARY KEY',
             },
-            'apifields':{
+            'vfields':{
                 'user':'TEXT unique NOT NULL',
                 'passwd':'TEXT NOT NULL',
                 'control_unit':'INTEGER',
             },
-            'appendfields':{
+            'sfields':{
                 'created_at':'TIMESTAMP',
             }
         },
-    },
-    '1':{
         'auth':{
             'sort':1,
             'pk':{
                 'id':'INTEGER PRIMARY KEY',
             },
-            'apifields':{
+            'vfields':{
                 'access_token':'TEXT NOT NULL',
                 'token_type':'TEXT NOT NULL',
                 'expires_in':'INTEGER',
                 'refresh_token':'TEXT',
                 'scope':'TEXT',
             },
-            'appendfields':{
+            'sfields':{
                 'created_at':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
             },
-            'contraints':{
+            'constraints':{
                 'FOREIGN KEY':'(user_id) REFERENCES user (id)',
             }
         },
-    },
-    '2':{
         'apiaccessconfig':{
             'sort':2,
             'pk':{
-                'apiid':'INTEGER PRIMARY KEY',
+                'id':'INTEGER PRIMARY KEY',
             },
-            'apifields':{
+            'vfields':{
                 'api_version':'TEXT NOT NULL',
                 'api_url':'TEXT NOT NULL',
-                'description':'TEXT',
                 'refresh':'INTEGER',
                 'init':'INTEGER DEFAULT 0',
                 'cs_required':'INTEGER DEFAULT 0',
                 'mt_required':'INTEGER DEFAULT 0',
                 'tr_required':'INTEGER DEFAULT 0',
+                'description':'TEXT DEFAULT NULL',
             },
-            'appendfields':{
+            'sfields':{
                 'created_at':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
             },
-            'contraints':{
+            'constraints':{
                 'FOREIGN KEY':' (user_id) REFERENCES user (id)',
             }
         }
+    },
+    DB_DATA : {
+        'controlunit':{
+            'sort':0,
+            'pk':{
+                'cuID':'INTEGER PRIMARY KEY',
+            },
+            'vfields':{
+                'status':'TEXT',
+                'status_bool':'INTEGER NOT NULL',
+                'cu_identifier':'TEXT NOT NULL',
+                'create_date':'TIMESTAMP',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL',
+            }
+        },
     }
 }
-
 
 db_api_sql = [
         """CREATE TABLE IF NOT EXISTS user (
