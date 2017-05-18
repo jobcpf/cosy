@@ -24,7 +24,7 @@ DATABASES = {
                 'control_unit':'INTEGER',
             },
             'sfields':{
-                'created_at':'TIMESTAMP',
+                'create_date':'TIMESTAMP',
             }
         },
         'auth':{
@@ -40,7 +40,7 @@ DATABASES = {
                 'scope':'TEXT',
             },
             'sfields':{
-                'created_at':'TIMESTAMP',
+                'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
             },
             'constraints':{
@@ -48,11 +48,9 @@ DATABASES = {
             }
         },
         'apiaccessconfig':{
-            'sort':2,
-            'pk':{
-                'id':'INTEGER PRIMARY KEY',
-            },
+            'sort':1,
             'vfields':{
+                'id':'INTEGER PRIMARY KEY',
                 'api_version':'TEXT NOT NULL',
                 'api_url':'TEXT NOT NULL',
                 'refresh':'INTEGER',
@@ -61,9 +59,36 @@ DATABASES = {
                 'mt_required':'INTEGER DEFAULT 0',
                 'tr_required':'INTEGER DEFAULT 0',
                 'description':'TEXT DEFAULT NULL',
+                'table_name':'TEXT DEFAULT NULL',
             },
             'sfields':{
-                'created_at':'TIMESTAMP',
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL',
+            },
+            'constraints':{
+                'FOREIGN KEY':' (user_id) REFERENCES user (id)',
+            }
+        },
+        'commsqueue':{
+            'sort':0,
+            'pk':{
+                'id':'INTEGER PRIMARY KEY',
+            },
+            'vfields':{
+                'control_unit':'INTEGER NOT NULL',
+                'meter':'INTEGER',
+                'comm_data':'TEXT',
+                'transactionID':'INTEGER',
+                'source':'INTEGER',
+                'target':'INTEGER',
+                'priority':'INTEGER',
+                'comm_sent':'INTEGER DEFAULT 0',
+                'comm_complete_req':'INTEGER DEFAULT 0',
+                'comm_complete':'INTEGER DEFAULT 0',
+                'URI':'TEXT',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
             },
             'constraints':{
@@ -74,10 +99,8 @@ DATABASES = {
     DB_DATA : {
         'controlunit':{
             'sort':0,
-            'pk':{
-                'cuID':'INTEGER PRIMARY KEY',
-            },
             'vfields':{
+                'cuID':'INTEGER PRIMARY KEY',
                 'status':'TEXT',
                 'status_bool':'INTEGER NOT NULL',
                 'cu_identifier':'TEXT NOT NULL',
@@ -86,100 +109,103 @@ DATABASES = {
             'sfields':{
                 'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
+                'self':'INTEGER DEFAULT 0',
+                'slave':'INTEGER DEFAULT 0',
+            }
+        },
+        'systemregister':{
+            'sort':0,
+            'vfields':{
+                'id':'INTEGER PRIMARY KEY',
+                'name':'TEXT NOT NULL',
+                'system_description':'TEXT',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL'
+            }
+        },
+        'eventtypes':{
+            'sort':1,
+            'vfields':{
+                'id':'INTEGER PRIMARY KEY',
+                'name':'TEXT NOT NULL',
+                'event_description':'TEXT',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL'
+            }
+        },
+        'controlpolicy':{
+            'sort':1,
+            'vfields':{
+                'id':'INTEGER PRIMARY KEY',
+                'default_system':'INTEGER',
+                'name':'TEXT',
+                'policy_data':'TEXT',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL'
+            },
+            'constraints':{
+                'FOREIGN KEY':' (default_system) REFERENCES systemregister (id)',
+            }
+        },
+        'controleventconfig':{
+            'sort':2,
+            'vfields':{
+                'id':'INTEGER PRIMARY KEY',
+                'event_owner':'INTEGER',
+                'target_up':'INTEGER',
+                'target_down':'INTEGER',
+                'event_type':'INTEGER',
+                'name':'TEXT',
+                'event_action':'TEXT',
+                'base_priority':'INTEGER',
+                'complete_req_up':'INTEGER DEFAULT 0',
+                'complete_req_down':'INTEGER DEFAULT 0',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL'
+            },
+            'constraints':{
+                'FOREIGN KEY':' (event_owner) REFERENCES systemregister (id)',
+                'FOREIGN KEY':' (target_up) REFERENCES systemregister (id)',
+                'FOREIGN KEY':' (target_down) REFERENCES systemregister (id)',
+                'FOREIGN KEY':' (event_type) REFERENCES eventtypes (id)',
+            }
+        },
+        'controlevent':{
+            'sort':3,
+            'vfields':{
+                'id':'INTEGER PRIMARY KEY',
+                'control_unit':'INTEGER',
+                'event_config':'INTEGER',
+                'parent_event':'INTEGER',
+                'source':'INTEGER',
+                'target':'INTEGER',
+                'event_data':'TEXT',
+                'transactionID':'INTEGER',
+                'priority':'INTEGER',
+                'link_confirmed':'INTEGER DEFAULT 0',
+                'link_complete_req':'INTEGER DEFAULT 0',
+                'link_complete':'INTEGER DEFAULT 0',
+                'complete':'INTEGER DEFAULT 0',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL'
+            },
+            'constraints':{
+                'FOREIGN KEY':' (control_unit) REFERENCES controlunit (id)',
+                'FOREIGN KEY':' (event_config) REFERENCES controleventconfig (id)',
+                'FOREIGN KEY':' (parent_event) REFERENCES controlevent (id)',
+                'FOREIGN KEY':' (source) REFERENCES systemregister (id)',
+                'FOREIGN KEY':' (target) REFERENCES systemregister (id)',
             }
         },
     }
 }
-
-db_api_sql = [
-        """CREATE TABLE IF NOT EXISTS user (
-            id INTEGER PRIMARY KEY,
-            user TEXT unique NOT NULL,
-            passwd TEXT NOT NULL,
-            control_unit INTEGER,
-            created_at TIMESTAMP
-        );""",
-        """CREATE TABLE IF NOT EXISTS auth (
-            id INTEGER PRIMARY KEY,
-            access_token TEXT NOT NULL,
-            token_type TEXT NOT NULL,
-            expires_in INTEGER,
-            refresh_token TEXT,
-            scope TEXT,
-            created_at TIMESTAMP,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user (id)
-        );""",
-        """CREATE TABLE IF NOT EXISTS apiaccessconfig (
-            apiid INTEGER PRIMARY KEY,
-            api_version TEXT NOT NULL,
-            api_url TEXT NOT NULL,
-            description TEXT,
-            refresh INTEGER,
-            init INTEGER DEFAULT 0,
-            cs_required INTEGER DEFAULT 0,
-            mt_required INTEGER DEFAULT 0,
-            tr_required INTEGER DEFAULT 0,
-            created_at TIMESTAMP,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user (id)
-        );""",
-]
-
-db_data_sql = [
-        """CREATE TABLE `envmon_controlevent` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `source_id` int(11) DEFAULT NULL,
-  `priority` int(11) NOT NULL,
-  `complete` tinyint(1) NOT NULL,
-  `create_date` datetime(6) NOT NULL,
-  `last_date` datetime(6) NOT NULL,
-  `control_unit_id` int(11) DEFAULT NULL,
-  `event_config_id` int(11) DEFAULT NULL,
-  `transactionID` bigint(20) DEFAULT NULL,
-  `event_data` varchar(200) DEFAULT NULL,
-  `link_complete` tinyint(1) NOT NULL,
-  `parent_event_id` int(11) DEFAULT NULL,
-  `target_id` int(11) DEFAULT NULL,
-  `link_complete_req` tinyint(1) NOT NULL,
-  `link_confirmed` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `envmon_controlevent_control_unit_id_814425e7_fk_envmon_co` (`control_unit_id`),
-  KEY `envmon_controlevent_event_config_id_ac018124_fk_envmon_co` (`event_config_id`),
-  KEY `envmon_controlevent_transactionID_453ce755` (`transactionID`),
-  KEY `envmon_controlevent_parent_event_id_2ebf0dbe_fk_envmon_co` (`parent_event_id`),
-  KEY `envmon_controlevent_source_id_859e2f82` (`source_id`),
-  KEY `envmon_controlevent_target_id_52a1ab8b` (`target_id`),
-  CONSTRAINT `envmon_controlevent_control_unit_id_814425e7_fk_envmon_co` FOREIGN KEY (`control_unit_id`) REFERENCES `envmon_controlunit` (`cuID`),
-  CONSTRAINT `envmon_controlevent_event_config_id_ac018124_fk_envmon_co` FOREIGN KEY (`event_config_id`) REFERENCES `envmon_controleventconfig` (`id`),
-  CONSTRAINT `envmon_controlevent_parent_event_id_2ebf0dbe_fk_envmon_co` FOREIGN KEY (`parent_event_id`) REFERENCES `envmon_controlevent` (`id`),
-  CONSTRAINT `envmon_controlevent_source_id_859e2f82_fk_envmon_sy` FOREIGN KEY (`source_id`) REFERENCES `envmon_systemregister` (`id`),
-  CONSTRAINT `envmon_controlevent_target_id_52a1ab8b_fk_envmon_sy` FOREIGN KEY (`target_id`) REFERENCES `envmon_systemregister` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8
-        );""",
-        """CREATE TABLE IF NOT EXISTS auth (
-            id INTEGER PRIMARY KEY,
-            access_token TEXT NOT NULL,
-            token_type TEXT NOT NULL,
-            expires_in INTEGER,
-            refresh_token TEXT,
-            scope TEXT,
-            created_at TIMESTAMP,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user (id)
-        );""",
-        """CREATE TABLE IF NOT EXISTS apiaccessconfig (
-            apiid INTEGER PRIMARY KEY,
-            api_version TEXT NOT NULL,
-            api_url TEXT NOT NULL,
-            description TEXT,
-            refresh INTEGER,
-            init INTEGER DEFAULT 0,
-            cs_required INTEGER DEFAULT 0,
-            mt_required INTEGER DEFAULT 0,
-            tr_required INTEGER DEFAULT 0,
-            created_at TIMESTAMP,
-            user_id INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES user (id)
-        );""",
-]

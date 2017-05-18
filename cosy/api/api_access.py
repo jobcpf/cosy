@@ -89,7 +89,7 @@ def api_call(api_call, user_id = False):
             
         if r.headers['Content-Type'] in ['application/json'] :
             
-            # update db.apiaccessconfig
+            # return data
             return r.json()
             
         else:

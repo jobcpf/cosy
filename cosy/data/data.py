@@ -22,6 +22,7 @@ import sqlite3
 ################## Variables #################################### Variables #################################### Variables ##################
 
 from global_config import * # get global variables
+script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # define working database for module
 db = DB_DATA
@@ -29,126 +30,171 @@ db = DB_DATA
 # get database definition dict
 from db_sql import DATABASES
 
-script_file = "%s: %s" % (now_file,os.path.basename(__file__))
+from data_common import create_connection, insert_statement
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-
-# create database connection
-def create_connection():
-    """
-    Create a database connection to the SQLite database specified by DB_PATH,DB_NAME
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Create DB Connection to %s' % (script_file,func_name,db))
-    
-    try:
-        # connect to DB
-        conn = sqlite3.connect('%s/%s' % (DB_PATH,db))
-        return conn
-    
-    except Exception as e:
-        logging.error('%s:%s: Could not create connection' % (script_file,func_name))
-        raise e
-    
-    return None
-
-
-
 def insert_data(user_id, table, json):
     """
-    Insert or Replace data.
-    returns True on create
-    > user ID, json
+    Insert or Replace data for database.
+    > user_id, table name, json data
     < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Insert or Replace data to table: %s' % (script_file,func_name,table))
+    logging.debug('%s:%s: Insert or Replace data to table: %s.%s' % (script_file,func_name,db,table))
+    
+    conn = create_connection(db)
     
     try :
-        # initial conditions
-        insert_val_list = []
         
-        ## build field list
-        
-        # initial conditions
-        insert_fields = ""
-        
-        # dynamic fields/values
-        for key,val in DATABASES[db][table]['vfields'].iteritems() :
-            insert_fields += "%s, " % key
-        
-        # static fields/values
-        insert_fields += "%s, " % 'last_date'
-        insert_fields += "%s, " % 'user_id'
-        
-        # end field statement
-        insert_fields = insert_fields[:-2] # loses ', ' from end of sql fields list
-        
-        ## build insert values from json
-        for api_json in json:
-            
-            # initial conditions
-            insert_values = []
-            
-            # dynamic fields/values
-            for key,val in DATABASES[db][table]['vfields'].iteritems() :
-                insert_values.append(api_json.get(key,None))
-            
-            # static fields/values
-            insert_values.append(datetime.now())
-            insert_values.append(user_id)
-            
-            # stack to detail list
-            insert_val_list.append(tuple(insert_values))
-            
-        # build insert holder based on values
-        insert_holder = "?, " * len(insert_values)
+        # build dynamic insert statement components
+        insert3 = insert_statement(user_id, db, table, json)
         
         # connect to / create db
-        conn = create_connection()
+        conn = create_connection(db)
+        
+        #print insert3[0]
+        #print insert3[1]
+        #print insert3[2]
         
         # connection object as context manager
         with conn:
-            conn.executemany("INSERT OR REPLACE INTO {tn}({tf}) VALUES ({ih})".format(tn=table,tf=insert_fields,ih=insert_holder[:-2]),insert_val_list)
-            
-        #### Test
-        for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
-            print row
-        
+            conn.executemany("INSERT OR REPLACE INTO {tn}({tf}) VALUES ({ih})".format(tn=table,tf=insert3[0],ih=insert3[1]),insert3[2])
+    
+    # connection object using 'with' will rool back db on exception
     except sqlite3.IntegrityError:
-        # connection object will rool back db
         logging.error('%s:%s: item already exists' % (script_file,func_name))
         raise e
         return False
 
     except sqlite3.OperationalError as e:
-        # connection object will rool back db
         logging.error('%s:%s: SQLite Operational Error' % (script_file,func_name))
         raise e
         return False
 
     except sqlite3.ProgrammingError as e:
-        # connection object will rool back db
         logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
         raise e
         return False
     
-    except Exception as e:
-        # connection object will rool back db
-        raise e
+    #except Exception as e:
+    #    # connection object will rool back db
+    #    raise e
     
     finally:
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+        #    print row
+        
         conn.close()
         
     return True
 
 
+def manage_control(user_id, table, cuID, status = None):
+    """
+    Enforce 'self' bool for control unit
+    > user_id, table, cuID
+    < True, False
+    
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    logging.debug('%s:%s: Manage control unit details in table: %s' % (script_file,func_name,table))
+
+    try :
+        
+        # connect to / create db
+        conn = create_connection(db)
+        
+        # connection object as context manager
+        with conn:
+            
+            if status is not None :
+                # status update
+                if status == 'OK':
+                    conn.execute("UPDATE {tn} SET status_bool = 1, status = ? WHERE cuID = ?;".format(tn=table),(status,cuID))
+                else:
+                    conn.execute("UPDATE {tn} SET status_bool = 0, status = ? WHERE cuID = ?;".format(tn=table),(status,cuID))
+                
+            else:
+                # enforce cuID
+                conn.execute("UPDATE {tn} SET self = 0;".format(tn=table))
+                conn.execute("UPDATE {tn} SET self = 1 WHERE cuID = ?;".format(tn=table),(cuID,))
+
+    # connection object using 'with' will rool back db on exception
+    except sqlite3.IntegrityError:
+        logging.error('%s:%s: item already exists' % (script_file,func_name))
+        raise e
+        return False
+
+    except sqlite3.OperationalError as e:
+        logging.error('%s:%s: SQLite Operational Error' % (script_file,func_name))
+        raise e
+        return False
+
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        raise e
+        return False
+    
+    #except Exception as e:
+    #    # connection object will rool back db
+    #    raise e
+    
+    finally:
+        
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+        #    print row
+            
+        conn.close()
+        
+    return True
 
 
+def get_control(table):
+    """
+    Get control unit and associated userID
+    > 
+    < id2 (user ID, cuID)
+    
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    logging.debug('%s:%s: Get active control unit and assicuated user id from table: %s' % (script_file,func_name,table))
 
+    try :
+        
+        # connect to / create db
+        conn = create_connection(db)
+        cur = conn.cursor()
+        
+        # get data
+        cur.execute("SELECT user_id, cuID from {tn} WHERE self = 1;".format(tn=table))
+        id2 = cur.fetchone()
+            
+    except sqlite3.OperationalError as e:
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file, func_name, e))
+        return False
+
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        raise e
+        return False
+    
+    #except Exception as e:
+    #    # connection object will rool back db
+    #    raise e
+    
+    finally:
+        
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+        #    print row
+            
+        conn.close()
+        
+    return id2
 
 
 """

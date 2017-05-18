@@ -40,10 +40,6 @@ if ENV == 1 : # dev environment on squirrel
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-
-# control unit - TODO: bring in from file/sys env
-control_unit = 1
-
 # logging
 now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
 
@@ -51,11 +47,12 @@ now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
 TOKEN_URL = '/o/token/'
 API_BASE = '/api/0.1'
 
-# initial API access call to retrieve API Config
-API_CONF = '/sys/api/'
+# API initiation identifiers
+CU_INIT = 'CUinit' # Root API Call indentifier for control unit registration URL
+API_INIT = 'APIinit' # Root API Call indentifier for API detail URL
 
-CU_INIT = 'CUinit'
-API_INIT = 'APIinit'
+# API call IDs
+COMM_API = 2 # cosy_api.sqlite.apiaccessconfig.id for API comm call GET, PUT, POST
 
 #sys_conf = '/sys/conf/'
 #sys_event_type = '/sys/et/'
@@ -71,8 +68,10 @@ API_INIT = 'APIinit'
 
 ## Database - sqlite
 DB_API = 'cosy_api.sqlite' # database for API access credentials - TODO: encrypt
-DB_DATA = 'cosy_data.sqlite' # database for system data
+TB_APICONF = 'apiaccessconfig'
 
+DB_DATA = 'cosy_data.sqlite' # database for system data
+TB_CONTROL = 'controlunit' # control unit details table
 
 ### Temp
 
