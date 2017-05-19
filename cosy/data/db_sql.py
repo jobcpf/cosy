@@ -18,14 +18,14 @@ DATABASES = {
             'pk':{
                 'id':'INTEGER PRIMARY KEY',
             },
-            'vfields':{
-                'user':'TEXT unique NOT NULL',
-                'passwd':'TEXT NOT NULL',
-                'control_unit':'INTEGER',
-            },
             'sfields':{
+                'user':'TEXT NOT NULL',
+                'passwd':'TEXT NOT NULL',
                 'create_date':'TIMESTAMP',
-            }
+            },
+            'commands':{
+                'CREATE UNIQUE INDEX':'user01 ON user (user)',
+            },
         },
         'auth':{
             'sort':1,
@@ -66,35 +66,9 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL',
             },
             'constraints':{
-                'FOREIGN KEY':' (user_id) REFERENCES user (id)',
+                'FOREIGN KEY':'(user_id) REFERENCES user (id)',
             }
         },
-        'commsqueue':{
-            'sort':0,
-            'pk':{
-                'id':'INTEGER PRIMARY KEY',
-            },
-            'vfields':{
-                'control_unit':'INTEGER NOT NULL',
-                'meter':'INTEGER',
-                'comm_data':'TEXT',
-                'transactionID':'INTEGER',
-                'source':'INTEGER',
-                'target':'INTEGER',
-                'priority':'INTEGER',
-                'comm_sent':'INTEGER DEFAULT 0',
-                'comm_complete_req':'INTEGER DEFAULT 0',
-                'comm_complete':'INTEGER DEFAULT 0',
-                'URI':'TEXT',
-            },
-            'sfields':{
-                'last_date':'TIMESTAMP',
-                'user_id':'INTEGER NOT NULL',
-            },
-            'constraints':{
-                'FOREIGN KEY':' (user_id) REFERENCES user (id)',
-            }
-        }
     },
     DB_DATA : {
         'controlunit':{
@@ -105,6 +79,7 @@ DATABASES = {
                 'status_bool':'INTEGER NOT NULL',
                 'cu_identifier':'TEXT NOT NULL',
                 'create_date':'TIMESTAMP',
+                'system_type':'INTEGER',
             },
             'sfields':{
                 'last_date':'TIMESTAMP',
@@ -150,7 +125,7 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':' (default_system) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(default_system) REFERENCES systemregister (id)',
             }
         },
         'controleventconfig':{
@@ -172,22 +147,24 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':' (event_owner) REFERENCES systemregister (id)',
-                'FOREIGN KEY':' (target_up) REFERENCES systemregister (id)',
-                'FOREIGN KEY':' (target_down) REFERENCES systemregister (id)',
-                'FOREIGN KEY':' (event_type) REFERENCES eventtypes (id)',
+                'FOREIGN KEY':'(event_owner) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(target_up) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(target_down) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(event_type) REFERENCES eventtypes (id)',
             }
         },
         'controlevent':{
             'sort':3,
-            'vfields':{
+            'pk':{
                 'id':'INTEGER PRIMARY KEY',
+            },
+            'vfields':{
                 'control_unit':'INTEGER',
                 'event_config':'INTEGER',
                 'parent_event':'INTEGER',
                 'source':'INTEGER',
                 'target':'INTEGER',
-                'event_data':'TEXT',
+                'data':'TEXT',
                 'transactionID':'INTEGER',
                 'priority':'INTEGER',
                 'link_confirmed':'INTEGER DEFAULT 0',
@@ -200,12 +177,46 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':' (control_unit) REFERENCES controlunit (id)',
-                'FOREIGN KEY':' (event_config) REFERENCES controleventconfig (id)',
-                'FOREIGN KEY':' (parent_event) REFERENCES controlevent (id)',
-                'FOREIGN KEY':' (source) REFERENCES systemregister (id)',
-                'FOREIGN KEY':' (target) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(control_unit) REFERENCES controlunit (id)',
+                'FOREIGN KEY':'(event_config) REFERENCES controleventconfig (id)',
+                'FOREIGN KEY':'(parent_event) REFERENCES controlevent (id)',
+                'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
+            },
+            'commands':{
+                'CREATE UNIQUE INDEX':'transactionID_01 ON controlevent (transactionID)',
             }
         },
+        'commsqueue':{
+            'sort':1,
+            'pk':{
+                'id':'INTEGER PRIMARY KEY',
+            },
+            'vfields':{
+                'control_unit':'INTEGER NOT NULL',
+                'meter':'INTEGER',
+                'data':'TEXT',
+                'transactionID':'INTEGER NOT NULL',
+                'source':'INTEGER',
+                'target':'INTEGER',
+                'priority':'INTEGER',
+                'comm_sent':'INTEGER DEFAULT 0',
+                'comm_complete_req':'INTEGER DEFAULT 0',
+                'comm_complete':'INTEGER DEFAULT 0',
+                'URI':'TEXT',
+            },
+            'sfields':{
+                'last_date':'TIMESTAMP',
+                'user_id':'INTEGER NOT NULL',
+            },
+            'constraints':{
+                'FOREIGN KEY':'(control_unit) REFERENCES controlunit (cuID)',
+                'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
+                'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
+            },
+            'commands':{
+                'CREATE UNIQUE INDEX':'transactionID_02 ON commsqueue (transactionID)',
+            },
+        }
     }
 }

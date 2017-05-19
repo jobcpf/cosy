@@ -8,7 +8,6 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
@@ -38,3 +37,6 @@ _build
 # Database files
 *.sqlite
 *.sql
+
+# Other
+*.pyc

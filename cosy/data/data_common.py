@@ -46,6 +46,59 @@ def create_connection(db):
     
     return False
 
+
+
+def execute_sql(db, sql) :
+    """
+    Execute SQL statement on database.
+    > database, sql statement
+    < True, False
+    
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    
+    # connect to / create db
+    conn = create_connection(db)
+    
+    try:
+        with conn:
+            conn.execute(sql)
+    
+    # connection object using 'with' will roll back db on exception & close connection when complete
+    
+    except sqlite3.IntegrityError as e:
+        logging.error('%s:%s: SQLite item already exists: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+
+    except sqlite3.OperationalError as e:
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+    
+    #except Exception as e:
+    #    raise e
+    
+    return True
+
+
+def dict_factory(cursor, row):
+    """
+    SQLite Cursor method for returning JSON.
+    
+    """
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
+
 def insert_statement(user_id, db, table, json_list):
     """
     Build sql inserts for dynamic data insert

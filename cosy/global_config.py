@@ -72,6 +72,8 @@ TB_APICONF = 'apiaccessconfig'
 
 DB_DATA = 'cosy_data.sqlite' # database for system data
 TB_CONTROL = 'controlunit' # control unit details table
+TB_COMM = 'commsqueue' # control unit details table
+TB_CEVENT = 'controlevent' # control unit details table
 
 ### Temp
 

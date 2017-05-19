@@ -66,8 +66,8 @@ def init_api(user_id):
 def init_control(user_id):
     """
     Initiate control unit
-    > user3
-    < cuID, False
+    > user_id
+    < id3 (userID,cuID,sysID), False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -87,7 +87,7 @@ def init_control(user_id):
             # enforce self to cuID returned by API
             cuID_self = data.manage_control(user_id, TB_CONTROL, control_json[0]['cuID'])
             
-            return control_json[0]['cuID']
+            return (user_id,control_json[0]['cuID'],control_json[0]['system_type'])
     
     # catch all return
     logging.error('%s:%s: Initiate control unit failed for user: %s' % (script_file,func_name,user_id))
@@ -99,7 +99,7 @@ def init_environment():
     """
     Test environment and initiate where required.
     > 
-    < id2 (userID,cuID)
+    < id3 (userID,cuID,sysID)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -121,16 +121,16 @@ def init_environment():
     
     logging.debug('%s:%s: Initiate control unit for user: %s' % (script_file,func_name,user3[0]))
     # init control unit database
-    cuID = init_control(user3[0])
+    id3 = init_control(user3[0])
                 
     # return user ID and cuID
-    return (user3[0],cuID)
+    return id3
 
 
-def config_environment(id2):
+def config_environment(id3):
     """
     Import environment configuration data (policy, config, registers)
-    > id2
+    > id3
     < True
     
     """
@@ -138,7 +138,7 @@ def config_environment(id2):
     logging.debug('%s:%s: Configure environment.' % (script_file,func_name))
     
     # get API calls marked as init
-    api5_list = datp.get_api_config(id2[0], TB_APICONF, init=True)
+    api5_list = datp.get_api_config(id3[0], TB_APICONF, init=True)
     
     # iterate calls 
     for api5 in api5_list :
@@ -148,14 +148,14 @@ def config_environment(id2):
         
         # append optional elements to API call URI
         if api5[1] :
-            api_call += "%s/" % id2[1]
+            api_call += "%s/" % id3[1]
         
         # retrieve data from API
-        data_json = apac.api_call(api_call, id2[0])
+        data_json = apac.api_call(api_call, id3[0])
         
         # insert data if returned
         if data_json :
-            data_inserted = data.insert_data(id2[0], api5[4], data_json)
+            data_inserted = data.insert_data(id3[0], api5[4], data_json)
             
             if data_inserted :
                 continue

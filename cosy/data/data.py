@@ -30,7 +30,7 @@ db = DB_DATA
 # get database definition dict
 from db_sql import DATABASES
 
-from data_common import create_connection, insert_statement
+from data_common import create_connection, insert_statement, dict_factory
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
@@ -43,8 +43,6 @@ def insert_data(user_id, table, json):
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Insert or Replace data to table: %s.%s' % (script_file,func_name,db,table))
-    
-    conn = create_connection(db)
     
     try :
         
@@ -62,21 +60,21 @@ def insert_data(user_id, table, json):
         with conn:
             conn.executemany("INSERT OR REPLACE INTO {tn}({tf}) VALUES ({ih})".format(tn=table,tf=insert3[0],ih=insert3[1]),insert3[2])
     
-    # connection object using 'with' will rool back db on exception
-    except sqlite3.IntegrityError:
-        logging.error('%s:%s: item already exists' % (script_file,func_name))
+    # connection object using 'with' will rool back db on exception and close on complete
+    except sqlite3.IntegrityError as e:
+        logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
 
     except sqlite3.OperationalError as e:
-        logging.error('%s:%s: SQLite Operational Error' % (script_file,func_name))
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
 
     except sqlite3.ProgrammingError as e:
-        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
     
     #except Exception as e:
     #    # connection object will rool back db
@@ -122,21 +120,21 @@ def manage_control(user_id, table, cuID, status = None):
                 conn.execute("UPDATE {tn} SET self = 0;".format(tn=table))
                 conn.execute("UPDATE {tn} SET self = 1 WHERE cuID = ?;".format(tn=table),(cuID,))
 
-    # connection object using 'with' will rool back db on exception
-    except sqlite3.IntegrityError:
-        logging.error('%s:%s: item already exists' % (script_file,func_name))
+    # connection object using 'with' will rool back db on exception and close on complete
+    except sqlite3.IntegrityError as e:
+        logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
 
     except sqlite3.OperationalError as e:
-        logging.error('%s:%s: SQLite Operational Error' % (script_file,func_name))
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
 
     except sqlite3.ProgrammingError as e:
-        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
     
     #except Exception as e:
     #    # connection object will rool back db
@@ -157,7 +155,7 @@ def get_control(table):
     """
     Get control unit and associated userID
     > 
-    < id2 (user ID, cuID)
+    < id3 (userID,cuID,sysID)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -170,17 +168,18 @@ def get_control(table):
         cur = conn.cursor()
         
         # get data
-        cur.execute("SELECT user_id, cuID from {tn} WHERE self = 1;".format(tn=table))
-        id2 = cur.fetchone()
+        cur.execute("SELECT user_id, cuID, system_type from {tn} WHERE self = 1;".format(tn=table))
+        id3 = cur.fetchone()
             
     except sqlite3.OperationalError as e:
-        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file, func_name, e))
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        #raise e
         return False
 
     except sqlite3.ProgrammingError as e:
-        logging.error('%s:%s: SQLite Programming Error' % (script_file,func_name))
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
         raise e
-        return False
+        #return False
     
     #except Exception as e:
     #    # connection object will rool back db
@@ -194,61 +193,130 @@ def get_control(table):
             
         conn.close()
         
-    return id2
+    return id3
 
 
-"""
-# Never do this -- insecure!
-symbol = 'RHAT'
-c.execute("SELECT * FROM stocks WHERE symbol = '%s'" % symbol)
-
-# Do this instead
-t = ('RHAT',)
-c.execute('SELECT * FROM stocks WHERE symbol=?', t)
-print c.fetchone()
-
-# Larger example that inserts many records at a time
-purchases = [('2006-03-28', 'BUY', 'IBM', 1000, 45.00),
-             ('2006-04-05', 'BUY', 'MSFT', 1000, 72.00),
-             ('2006-04-06', 'SELL', 'IBM', 500, 53.00),
-            ]
-c.executemany('INSERT INTO stocks VALUES (?,?,?,?,?)', purchases)
-
-Connection objects can be used as context managers that automatically commit or rollback transactions. In the event of an exception, the transaction is rolled back; otherwise, the transaction is committed:
-
-import sqlite3
-
-con = sqlite3.connect(":memory:")
-con.execute("create table person (id integer primary key, firstname varchar unique)")
-
-# Successful, con.commit() is called automatically afterwards
-with con:
-    con.execute("insert into person(firstname) values (?)", ("Joe",))
-
-# con.rollback() is called after the with block finishes with an exception, the
-# exception is still raised and must be caught
-try:
-    with con:
-        con.execute("insert into person(firstname) values (?)", ("Joe",))
-except sqlite3.IntegrityError:
-    print "couldn't add Joe twice"
-
-
+def manage_comms(id3, sent_conf = False):
+    """
+    Get comms for target system
+    > id3 (userID,cuID,sysID), [API sent confirmation transactionID list]
+    < True, False
     
+    TODO - currently one way - need both ways
     
-# example
-def dbaccessexample():
-    try:
-        with db:
-            db.execute('''INSERT INTO users(name, phone, email, password)
-                    VALUES(?,?,?,?)''', (name1,phone1, email1, password1))
-    except sqlite3.IntegrityError:
-        print('Record already exists')
-    except Exception as e:
-        # Roll back any change if something goes wrong
-        db.rollback()
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    logging.debug('%s:%s: Manage communications and events.' % (script_file,func_name))
+
+    try :
+        # connect to / create db
+        conn = create_connection(db)
+        
+        ## confirm events sent to API
+        if sent_conf :
+            
+            # iterate transactions and update sent
+            for transactionID in sent_conf:
+                conn.execute("UPDATE {tn} SET comm_sent = 1 WHERE transactionID = ?;".format(tn=TB_COMM),(transactionID,))
+                
+                ret_val = True
+            
+        ## sync events and queue - return API update events
+        else :
+            
+            ### get incomplete data from comms queue
+            
+            # define fields for select / insert
+            fields = "control_unit, source, target, data, transactionID, priority, last_date, user_id"
+            
+            cur = conn.cursor()
+            
+            # get data
+            cur.execute("""SELECT {tf} FROM {tn} WHERE control_unit = ? AND target = ? AND comm_complete = 0;
+                        """.format(tn=TB_COMM,tf=fields),(id3[1], id3[2]))
+            comms_list = cur.fetchall()
+            
+            ### insert comms data data to events list where transactionID not already present
+            
+            # build fields holder based on values in fields
+            fields_holder = "?, " * len(comms_list[0])
+            fields_holder = fields_holder[:-2] # loses ', ' from end of holder list
+            
+            # connection object as context manager
+            with conn:
+                conn.executemany("""INSERT OR IGNORE INTO {tn}({tf}) VALUES ({ih})""".format(tn=TB_CEVENT,tf=fields,ih=fields_holder),comms_list)
+            
+            ## update where events completed
+                conn.execute("""UPDATE {tu}
+                                SET
+                                    data = (SELECT data FROM {ts} WHERE {ts}.transactionID = {tu}.transactionID), 
+                                    comm_complete = 1
+                                WHERE
+                                    EXISTS (
+                                        SELECT * FROM {ts}
+                                        WHERE {ts}.transactionID = {tu}.transactionID
+                                        AND {ts}.complete = 1 
+                                        AND {tu}.comm_complete = 0
+                                    );
+                            """.format(tu=TB_COMM, ts=TB_CEVENT))
+            
+            
+            ## get JSON comms events that need API updates
+            
+            # define fields for select / insert
+            #fields = "control_unit, meter, data, transactionID, source, target, priority, comm_complete_req, comm_complete, URI"
+            fields = "data, comm_complete, URI"
+            
+            # over write row_factory to return JSON
+            conn.row_factory = dict_factory
+            cur = conn.cursor()
+            
+            # get data for comms sync
+            cur.execute("""SELECT {tf} FROM {tn}
+                        WHERE comm_complete = 1
+                        AND comm_sent IS NULL
+                        AND comm_complete_req = 1;
+                        """.format(tn=TB_COMM,tf=fields))
+            
+            ret_val = cur.fetchall()
+            
+            
+    # connection object using 'with' will rool back db on exception and close on complete
+    except sqlite3.IntegrityError as e:
+        logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
         raise e
-    finally:
-        db.close()
+        #return False
+        
+    except sqlite3.OperationalError as e:
+        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
     
-"""
+    except ValueError as e:
+        logging.error('%s:%s: ValueError: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+    
+    #except Exception as e:
+    #    # connection object will rool back db
+    #    raise e
+    
+    finally:
+        
+        #### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=TB_CEVENT)):
+        #    print row
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=TB_COMM)):
+        #    print row
+            
+        conn.close()
+        
+    return ret_val
+
+
+

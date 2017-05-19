@@ -21,7 +21,7 @@ from requests.auth import HTTPBasicAuth
 
 # Import custom modules
 import api.api_auth as apa
-import data.data_api as dat
+import data.data_api as datp
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
@@ -30,9 +30,9 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def api_call(api_call, user_id = False):
+def api_call(api_call, user_id = False, put = False):
     """
-    Retrieve API Access details from API using Token Auth
+    Retrieve data from API using token.
     > 'api call identifier', [user_id], 
     < json, http status code, False
     
@@ -43,10 +43,10 @@ def api_call(api_call, user_id = False):
     # attempt to get existing token with or without user ID
     if user_id :
         # get last registered token from db by user ID
-        token3 = dat.get_api_token(user_id)
+        token3 = datp.get_api_token(user_id)
     else:
         # get last registered token from db
-        token3 = dat.get_api_token()
+        token3 = datp.get_api_token()
     
     try:
         get_new_token = False
@@ -58,7 +58,11 @@ def api_call(api_call, user_id = False):
             auth_header = {'Authorization': 'Bearer %s' % token3[1]}
             
             # make request
-            r = requests.get(api_call, headers=auth_header)
+            if put :
+                r = requests.put(api_call, json=put, headers=auth_header)
+            else :
+                # make request
+                r = requests.get(api_call, headers=auth_header)
             
             # check for unauthorised using token
             if r.status_code == requests.codes.unauthorized:
@@ -75,18 +79,24 @@ def api_call(api_call, user_id = False):
             auth_header = {'Authorization': 'Bearer %s' % token3[1]}
             
             # make request
-            r = requests.get(api_call, headers=auth_header)
+            if put :
+                r = requests.put(api_call, json=put, headers=auth_header)
+            else :
+                r = requests.get(api_call, headers=auth_header)
             
-            # check for unauthorised using token
-            if r.status_code == requests.codes.unauthorized:
-                logging.error('%s:%s: User (id: %s) not authorised for API call. Status Code: %s' % (script_file,func_name,token3[0],r.status_code))
-                return False
-        
         # capture status codes from all calls
-        if r.status_code == requests.codes.not_found:
-            logging.error('%s:%s: API resource not found. Status Code: %s' % (script_file,func_name,r.status_code))
+        if r.status_code == requests.codes.unauthorized:
+            logging.error('%s:%s: API data retrieval unauthorised with token. Status Code: %s' % (script_file,func_name,r.status_code))
             return False
-            
+        
+        elif r.status_code == requests.codes.internal_server_error:
+            logging.error('%s:%s: API caused an internal server error. Status Code: %s' % (script_file,func_name,r.status_code))
+            return False
+        
+        elif r.status_code == requests.codes.bad_request:
+            logging.error('%s:%s: Bad request to API. Status Code: %s' % (script_file,func_name,r.status_code))
+            return False
+        
         if r.headers['Content-Type'] in ['application/json'] :
             
             # return data
