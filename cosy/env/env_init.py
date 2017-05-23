@@ -67,7 +67,7 @@ def init_control(user_id):
     """
     Initiate control unit
     > user_id
-    < id3 (userID,cuID,sysID), False
+    < id3 (userID,sysID,system_type), False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -85,9 +85,10 @@ def init_control(user_id):
             control_inserted = data.insert_data(user_id, TB_CONTROL, control_json)
             
             # enforce self to cuID returned by API
-            cuID_self = data.manage_control(user_id, TB_CONTROL, control_json[0]['cuID'])
+            sysID_self = data.manage_control(user_id, TB_CONTROL, control_json[0]['sysID'])
             
-            return (user_id,control_json[0]['cuID'],control_json[0]['system_type'])
+            if sysID_self:
+                return (user_id,control_json[0]['sysID'],control_json[0]['system_type'])
     
     # catch all return
     logging.error('%s:%s: Initiate control unit failed for user: %s' % (script_file,func_name,user_id))
@@ -99,7 +100,7 @@ def init_environment():
     """
     Test environment and initiate where required.
     > 
-    < id3 (userID,cuID,sysID)
+    < id3 (userID,sysID,system_type)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -125,6 +126,7 @@ def init_environment():
                 
     # return user ID and cuID
     return id3
+
 
 
 def config_environment(id3):

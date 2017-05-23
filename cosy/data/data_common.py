@@ -33,7 +33,7 @@ def create_connection(db):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Create DB Connection for database %s' % (script_file,func_name,db))
+    #logging.debug('%s:%s: Create DB Connection for database %s' % (script_file,func_name,db))
     
     try:
         # connect to DB
@@ -87,6 +87,7 @@ def execute_sql(db, sql) :
     return True
 
 
+
 def dict_factory(cursor, row):
     """
     SQLite Cursor method for returning JSON.
@@ -107,7 +108,7 @@ def insert_statement(user_id, db, table, json_list):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Build data insert statement for table: %s.%s' % (script_file,func_name,db,table))
+    #logging.debug('%s:%s: Build data insert statement for table: %s.%s' % (script_file,func_name,db,table))
     
     try: 
         # initial conditions

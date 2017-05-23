@@ -71,10 +71,12 @@ def comm_sync(id3):
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Sync Comms Queue for user id: %s control unit id: %s' % (script_file,func_name,id3[0],id3[1]))
     
+    ## GET from API
+    
     # get API call for comm queue
     comm_api_list = datp.get_api_config(id3[0], TB_APICONF, False, COMM_API)
     
-    # iterate calls 
+    # iterate calls [should only be one]
     for comm_call in comm_api_list :
         
         # build API call URI
@@ -90,12 +92,43 @@ def comm_sync(id3):
         # insert data if returned
         if data_json :
             data_inserted = data.insert_data(id3[0], comm_call[4], data_json)
-            
-            if data_inserted :
-                return data_inserted
-
-    # catch all return
-    logging.error('%s:%s: Could not sync comms queue for user id: %s control unit id: %s' % (script_file,func_name,id3[0],id3[1]))
+    
+    ## UPDATE API
+    
+    # get list of comms items requiring API update
+    comms_putpost = data.manage_comms(id3)
+    
+    #update confirmed list to pass
+    sent_list = []
+    
+    # api call for each PUT in list TODO: put all items at once.
+    for comm_json in comms_putpost[0]:
+        
+        # get API call from JSON
+        api_uri = comm_json.pop('URI')
+        
+        # make API call
+        api_updated = apac.api_call(api_uri, id3[0], comm_json)
+        
+        if api_updated :
+            sent_list.append((api_updated['control_sys'],api_updated['transactionID']))
+    
+    # api call for each POST in list TODO: put all items at once.
+    for comm_json in comms_putpost[1]:
+        
+        # make API call
+        api_updated = apac.api_call(api_call, id3[0], comm_json, True)
+        
+        if api_updated :
+            sent_list.append((api_updated['control_sys'],api_updated['transactionID']))
+    
+    ## CONFIRM API Updated
+    
+    if sent_list :
+        # Mark comms and events as sent
+        comms_updated = data.manage_comms(id3,sent_list)
+        return comms_updated
+    
     return False
 
 
@@ -112,29 +145,6 @@ print id3
 
 comm_sync = comm_sync(id3)
 print comm_sync
-
-comms_json_list = data.manage_comms(id3)
-
-
-#update confirmed
-updated = []
-
-for comm_json in comms_json_list:
-    
-    # get API call from JSON
-    api_call = comm_json.pop('URI')
-    
-    # make API call
-    api_updated = apac.api_call(api_call, id3[0], put = comm_json)
-    
-    if api_updated :
-        updated.append(api_updated['transactionID'])
-
-comms_updated = data.manage_comms(id3,updated)
-
-
-
-print comms_updated
 
 
 

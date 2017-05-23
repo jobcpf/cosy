@@ -17,6 +17,7 @@
         },
         "timestamp-field" : "timestamp",
         "timestamp-format": ["%Y%m%d_%H%M%S"],
+        "ordered-by-time:": true,
         "value" : {
             "user" : {
                 "kind" : "string",

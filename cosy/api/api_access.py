@@ -30,7 +30,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def api_call(api_call, user_id = False, put = False):
+def api_call(api_call, user_id = False, json = False, post = False):
     """
     Retrieve data from API using token.
     > 'api call identifier', [user_id], 
@@ -58,10 +58,11 @@ def api_call(api_call, user_id = False, put = False):
             auth_header = {'Authorization': 'Bearer %s' % token3[1]}
             
             # make request
-            if put :
-                r = requests.put(api_call, json=put, headers=auth_header)
+            if post :
+                r = requests.post(api_call, json=json, headers=auth_header)
+            elif json :
+                r = requests.put(api_call, json=json, headers=auth_header)
             else :
-                # make request
                 r = requests.get(api_call, headers=auth_header)
             
             # check for unauthorised using token
@@ -79,8 +80,10 @@ def api_call(api_call, user_id = False, put = False):
             auth_header = {'Authorization': 'Bearer %s' % token3[1]}
             
             # make request
-            if put :
-                r = requests.put(api_call, json=put, headers=auth_header)
+            if post :
+                r = requests.post(api_call, json=json, headers=auth_header)
+            elif json :
+                r = requests.put(api_call, json=json, headers=auth_header)
             else :
                 r = requests.get(api_call, headers=auth_header)
             

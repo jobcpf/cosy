@@ -73,8 +73,11 @@ DATABASES = {
     DB_DATA : {
         'controlunit':{
             'sort':0,
-            'vfields':{
+            'pk':{
                 'cuID':'INTEGER PRIMARY KEY',
+            },
+            'vfields':{
+                'sysID':'BIGINT NOT NULL',
                 'status':'TEXT',
                 'status_bool':'INTEGER NOT NULL',
                 'cu_identifier':'TEXT NOT NULL',
@@ -84,9 +87,13 @@ DATABASES = {
             'sfields':{
                 'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
-                'self':'INTEGER DEFAULT 0',
-                'slave':'INTEGER DEFAULT 0',
-            }
+                'self_bool':'INTEGER DEFAULT 0',
+                'slave_bool':'INTEGER DEFAULT 0',
+                'parent_bool':'INTEGER DEFAULT 0',
+            },
+            'commands':{
+                'CREATE UNIQUE INDEX':'sysID01 ON controlunit (sysID)',
+            },
         },
         'systemregister':{
             'sort':0,
@@ -158,8 +165,8 @@ DATABASES = {
             'pk':{
                 'id':'INTEGER PRIMARY KEY',
             },
-            'vfields':{
-                'control_unit':'INTEGER',
+            'sfields':{
+                'control_sys':'INTEGER',
                 'event_config':'INTEGER',
                 'parent_event':'INTEGER',
                 'source':'INTEGER',
@@ -167,24 +174,21 @@ DATABASES = {
                 'data':'TEXT',
                 'transactionID':'INTEGER',
                 'priority':'INTEGER',
-                'link_confirmed':'INTEGER DEFAULT 0',
-                'link_complete_req':'INTEGER DEFAULT 0',
-                'link_complete':'INTEGER DEFAULT 0',
                 'complete':'INTEGER DEFAULT 0',
-            },
-            'sfields':{
+                'link_complete_req':'INTEGER DEFAULT 0',
+                'link_confirmed':'INTEGER DEFAULT 0',
                 'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':'(control_unit) REFERENCES controlunit (id)',
+                'FOREIGN KEY':'(control_sys) REFERENCES controlunit (sysID)',
                 'FOREIGN KEY':'(event_config) REFERENCES controleventconfig (id)',
                 'FOREIGN KEY':'(parent_event) REFERENCES controlevent (id)',
                 'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
                 'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
             },
             'commands':{
-                'CREATE UNIQUE INDEX':'transactionID_01 ON controlevent (transactionID)',
+                'CREATE UNIQUE INDEX':'transactionID_01 ON controlevent (control_sys,transactionID)',
             }
         },
         'commsqueue':{
@@ -193,29 +197,29 @@ DATABASES = {
                 'id':'INTEGER PRIMARY KEY',
             },
             'vfields':{
-                'control_unit':'INTEGER NOT NULL',
+                'control_sys':'INTEGER NOT NULL',
                 'meter':'INTEGER',
                 'data':'TEXT',
                 'transactionID':'INTEGER NOT NULL',
                 'source':'INTEGER',
                 'target':'INTEGER',
                 'priority':'INTEGER',
-                'comm_sent':'INTEGER DEFAULT 0',
-                'comm_complete_req':'INTEGER DEFAULT 0',
-                'comm_complete':'INTEGER DEFAULT 0',
+                'complete_req':'INTEGER DEFAULT 0',
+                'complete':'INTEGER DEFAULT 0',
                 'URI':'TEXT',
             },
             'sfields':{
+                'comm_sent':'INTEGER DEFAULT 0',
                 'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL',
             },
             'constraints':{
-                'FOREIGN KEY':'(control_unit) REFERENCES controlunit (cuID)',
+                'FOREIGN KEY':'(control_sys) REFERENCES controlunit (sysID)',
                 'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
                 'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
             },
             'commands':{
-                'CREATE UNIQUE INDEX':'transactionID_02 ON commsqueue (transactionID)',
+                'CREATE UNIQUE INDEX':'transactionID_02 ON commsqueue (control_sys,transactionID)',
             },
         }
     }
