@@ -27,6 +27,8 @@ if ENV == 1 : # dev environment on squirrel
     
     ## Database - sqlite
     DB_PATH = '/data/datashare'
+    SYS_DETAIL = '/home/squirrel/dev/cosy/script/detail.json'
+    AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
     
     ## Path & URL
     BASE_URL = 'http://172.16.32.40:8000'
@@ -50,21 +52,10 @@ API_BASE = '/api/0.1'
 # API initiation identifiers
 CU_INIT = 'CUinit' # Root API Call indentifier for control unit registration URL
 API_INIT = 'APIinit' # Root API Call indentifier for API detail URL
+SYS_DEFAULT = 31111 # default system type if not aquired from details.json
 
 # API call IDs
 COMM_API = 2 # cosy_api.sqlite.apiaccessconfig.id for API comm call GET, PUT, POST
-
-#sys_conf = '/sys/conf/'
-#sys_event_type = '/sys/et/'
-#
-#comm = '/comm/%s/' % control_unit # TODO: populate all API calls aside from this from initial comm
-#env_pol = '/env/pol/%s/' % control_unit
-#env_conf = '/env/conf/'
-#
-#mets = '/mets/%s/' % control_unit
-#metr = '/met/' # requires meter id
-#met_pol = '/met/pol/%s/' % control_unit
-#met_conf = '/met/conf/'
 
 ## Database - sqlite
 DB_API = 'cosy_api.sqlite' # database for API access credentials - TODO: encrypt
@@ -75,8 +66,26 @@ TB_CONTROL = 'controlunit' # control unit details table
 TB_COMM = 'commsqueue' # control unit details table
 TB_CEVENT = 'controlevent' # control unit details table
 TB_CECONF = 'controleventconfig' # control event configuration
+
+
 ### Temp
 
+#details = {'os':'4.10.8-200.fc25.x86_64',
+#           'hardware':'Raspberry Pi v3B',
+#           'system_type':31,
+#           }
+#
+#with open(SYS_DETAIL,"w") as outfile:
+#    json.dump(details,outfile)
+
+#details = {'user':'apiauth',
+#           'passwd':'bingowing',
+#            'client_id':'4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW',
+#            'client_secret':'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI',
+#           }
+#
+#with open(AUTH_DETAIL,"w") as outfile:
+#    json.dump(details,outfile)
 
 
 ################## Functions ###################################### Functions ###################################### Functions ####################

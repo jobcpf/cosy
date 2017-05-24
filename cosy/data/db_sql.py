@@ -83,6 +83,9 @@ DATABASES = {
                 'cu_identifier':'TEXT NOT NULL',
                 'create_date':'TIMESTAMP',
                 'system_type':'INTEGER',
+                'parent_sysID':'INTEGER',
+                'details':'TEXT',
+                'URI':'TEXT',
             },
             'sfields':{
                 'last_date':'TIMESTAMP',
@@ -142,7 +145,7 @@ DATABASES = {
                 'event_owner':'INTEGER',
                 'target_up':'INTEGER',
                 'target_down':'INTEGER',
-                'event_type':'INTEGER',
+                'event_type':'INTEGER NOT NULL',
                 'name':'TEXT',
                 'event_action':'TEXT',
                 'base_priority':'INTEGER',

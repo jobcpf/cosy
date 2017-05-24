@@ -113,7 +113,7 @@ def init_user(table,user,passwd):
             
             # get userID to return
             userID = cur.lastrowid
-    
+            
     except sqlite3.OperationalError as e:
         logging.error('%s:%s: Table does not exist - database file missing?' % (script_file,func_name))
         raise e

@@ -11,12 +11,13 @@ Module ...
 # Standard import
 import os
 import sys
+import json
 
 import requests
 from requests.auth import HTTPBasicAuth
 
 # Import custom modules
-import data.data_api as dat
+import data.data_api as datp
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
@@ -75,9 +76,9 @@ def get_new_token(token3 = False):
         
         # get (id,user,password) for authed user from db.auth
         if user_id :
-            user_details = dat.get_api_user(user_id)
+            user_details = datp.get_api_user(user_id)
         else:
-            user_details = dat.get_api_user()
+            user_details = datp.get_api_user()
         
             # get user id to pass
             user_id = user_details[0]
@@ -85,7 +86,7 @@ def get_new_token(token3 = False):
         # check for user details
         if not user_details :
             logging.error('%s:%s: No user exists to retrieve token' % (script_file,func_name))
-            user_details = dat.init_user()
+            user_details = datp.init_user()
         
         # build auth credentials
         params = {'grant_type':'password',
@@ -102,7 +103,7 @@ def get_new_token(token3 = False):
         if r.headers['Content-Type'] in ['application/json'] :
             
             # insert token into db.auth
-            inserted = dat.insert_token(user_id, r.json())
+            inserted = datp.insert_token(user_id, r.json())
             
             # returns token3 or False
             return inserted
@@ -113,4 +114,4 @@ def get_new_token(token3 = False):
         
     else:
         logging.error('%s:%s: Token retrieval failed for user %s with status code %s' % (script_file,func_name,user_details[1],r.status_code))
-        return r.status_code
+        return False
