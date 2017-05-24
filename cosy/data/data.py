@@ -159,7 +159,6 @@ def get_control(table):
     logging.debug('%s:%s: Get active control unit and associated user id from table: %s' % (script_file,func_name,table))
 
     try :
-        
         # connect to / create db
         conn = create_connection(db)
         
@@ -173,7 +172,7 @@ def get_control(table):
         id6 = cur.fetchone()
             
     except sqlite3.OperationalError as e:
-        logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
         #raise e
         return False
 
@@ -289,10 +288,10 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
                 conn.execute("""INSERT INTO {tu} (control_sys, transactionID, source, target, data, priority, last_date, user_id, complete_req)
                                     SELECT control_sys, transactionID, source, target, data, priority, last_date, user_id, link_complete_req
                                     FROM {tn} AS a
-                                    WHERE control_sys = ?
-                                    AND source = ?
-                                    AND complete = 0
-                                    AND transactionID IS NOT NULL
+                                    WHERE a.control_sys = ?
+                                    AND a.source = ?
+                                    AND NULLIF(a.complete,0) IS NULL
+                                    AND a.transactionID IS NOT NULL
                                     AND NOT EXISTS (
                                         SELECT *
                                         FROM {tn} AS b
@@ -434,7 +433,7 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
         #for row in conn.execute('SELECT * FROM {tn}'.format(tn=TB_COMM)):
         #    print row
         conn.close()
-        
+    
     return ret_val
 
 

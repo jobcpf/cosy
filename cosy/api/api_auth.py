@@ -22,7 +22,6 @@ import data.data_api as datp
 ################## Variables #################################### Variables #################################### Variables ##################
 
 from global_config import * # get global variables
-from auth import CLIENT_ID, CLIENT_SECRET
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
@@ -43,7 +42,7 @@ def get_new_token(token3 = False):
     
     # logic for refresh token vs u/p authorisation control
     up_auth = True
-    user_id = False
+    user_details = False
     
     ## if token3 passed request auth token using refresh token
     if token3 :
@@ -51,18 +50,18 @@ def get_new_token(token3 = False):
         # get id for token user
         user_id = token3[0]
         
+        # get user5 for authed user from db.user
+        user_details = datp.get_api_user(user_id)
+        
         # dont use u/p auth
         up_auth = False
-        
-        # get user id to pass
-        user_id = token3[0]
         
         # build auth credentials
         params = {'grant_type':'refresh_token',
                 'refresh_token':token3[2]
                 }
         
-        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET))
+        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(user_details['client_id'], user_details['client_secret']))
         
         # test if refresh token call successful
         if r.status_code == requests.codes.unauthorized:
@@ -74,14 +73,12 @@ def get_new_token(token3 = False):
     ## request auth token using username:password
     if up_auth :
         
-        # get (id,user,password) for authed user from db.auth
-        if user_id :
-            user_details = datp.get_api_user(user_id)
-        else:
+        if not user_details :
+            # get user5 for authed user from db.user
             user_details = datp.get_api_user()
-        
-            # get user id to pass
-            user_id = user_details[0]
+            
+        # get user id to pass
+        user_id = user_details['id']
         
         # check for user details
         if not user_details :
@@ -90,12 +87,12 @@ def get_new_token(token3 = False):
         
         # build auth credentials
         params = {'grant_type':'password',
-                'username':user_details[1],
-                'password':user_details[2]
+                'username':user_details['user'],
+                'password':user_details['passwd']
                 }
         
         # make request
-        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(CLIENT_ID, CLIENT_SECRET))
+        r = requests.post('%s%s' % (BASE_URL,TOKEN_URL), data=params, auth=HTTPBasicAuth(user_details['client_id'], user_details['client_secret']))
     
     # return based on response
     if r.status_code == requests.codes.ok :

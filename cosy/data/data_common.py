@@ -119,9 +119,10 @@ def insert_statement(user_id, db, table, json_list):
         # initial conditions
         insert_fields = ""
         
-        # dynamic fields/values
-        for key,val in DATABASES[db][table]['vfields'].iteritems() :
-            insert_fields += "%s, " % key
+        if DATABASES[db][table]['vfields']:
+            # dynamic fields/values
+            for key,val in DATABASES[db][table]['vfields'].iteritems() :
+                insert_fields += "%s, " % key
         
         # static fields/values
         insert_fields += "%s, " % 'last_date'
@@ -140,9 +141,10 @@ def insert_statement(user_id, db, table, json_list):
             # initial conditions
             insert_values = []
             
-            # dynamic fields/values
-            for key,val in DATABASES[db][table]['vfields'].iteritems() :
-                insert_values.append(individual_json.get(key,None))
+            if DATABASES[db][table]['vfields']:
+                # dynamic fields/values
+                for key,val in DATABASES[db][table]['vfields'].iteritems() :
+                    insert_values.append(individual_json.get(key,None))
             
             # static fields/values
             insert_values.append(datetime.now())
@@ -158,4 +160,7 @@ def insert_statement(user_id, db, table, json_list):
         return (insert_fields,insert_holder,insert_val_list)
         
     except Exception as e:
+        logging.error('%s:%s: Error generating insert statement: %s' % (script_file,func_name,e))
         raise e
+    
+    return False

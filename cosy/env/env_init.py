@@ -34,7 +34,7 @@ from data.db_sql import DATABASES
 def init_api(user_id):
     """
     Retrieve API details from API Root Call
-    > user3
+    > user_id
     < True, False
     
     """
@@ -148,15 +148,15 @@ def init_environment():
         auth_json = json.load(json_file)
     
     # register user
-    user3 = dati.init_user('user', auth_json['user'], auth_json['passwd'])
+    user5 = dati.init_user('user', auth_json)
     
-    logging.debug('%s:%s: Initiate API for user: %s' % (script_file,func_name,user3[0]))
+    logging.debug('%s:%s: Initiate API for user: %s' % (script_file,func_name,user5['user']))
     # init API for user
-    api_init = init_api(user3[0])
+    api_init = init_api(user5['id'])
     
-    logging.debug('%s:%s: Initiate control unit for user: %s' % (script_file,func_name,user3[0]))
+    logging.debug('%s:%s: Initiate control unit for user: %s' % (script_file,func_name,user5['user']))
     # init control unit database
-    id6 = init_control(user3[0])
+    id6 = init_control(user5['id'])
     
     # return user ID and cuID
     return id6

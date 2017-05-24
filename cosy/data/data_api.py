@@ -28,7 +28,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 db = DB_API
 
 # common db operations
-from data_common import create_connection, insert_statement
+from data_common import create_connection, insert_statement, dict_factory
 
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
@@ -95,7 +95,7 @@ def get_api_user(user_id = False):
     """
     Get latest user credentials or credentials of user ID for cosy API access 
     > opt userID
-    < user3 (userID, user, password)
+    < user5 {'passwd': '', 'client_secret': '', 'id': , 'client_id': '', 'user': ''}
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -104,19 +104,21 @@ def get_api_user(user_id = False):
     try :
         # connect to / create db
         conn = create_connection(db)
+        # over write row_factory to return JSON
+        conn.row_factory = dict_factory
         
         # cursor
         cur = conn.cursor()
         
         if user_id :
             # get entry for user ID
-            cur.execute("SELECT id, user, passwd FROM user WHERE id = ? ORDER BY create_date DESC LIMIT 1", (user_id, ))
-            user3 = cur.fetchone()
+            cur.execute("SELECT id, user, passwd, client_id, client_secret FROM user WHERE id = ? ORDER BY create_date DESC LIMIT 1", (user_id, ))
+            user5 = cur.fetchone()
         
         else:
             # get latest user entry
-            cur.execute("SELECT id, user, passwd FROM user ORDER BY create_date DESC LIMIT 1")
-            user3 = cur.fetchone()
+            cur.execute("SELECT id, user, passwd, client_id, client_secret FROM user ORDER BY create_date DESC LIMIT 1")
+            user5 = cur.fetchone()
         
     except Exception as e:
         # Roll back any change if something goes wrong
@@ -125,7 +127,7 @@ def get_api_user(user_id = False):
     finally:
         conn.close()
     
-    return user3
+    return user5
 
 
 

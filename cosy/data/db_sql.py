@@ -21,6 +21,8 @@ DATABASES = {
             'sfields':{
                 'user':'TEXT NOT NULL',
                 'passwd':'TEXT NOT NULL',
+                'client_id':'TEXT NOT NULL',
+                'client_secret':'TEXT NOT NULL',
                 'create_date':'TIMESTAMP',
             },
             'commands':{
@@ -77,7 +79,7 @@ DATABASES = {
                 'cuID':'INTEGER PRIMARY KEY',
             },
             'vfields':{
-                'sysID':'BIGINT NOT NULL',
+                'sysID':'BIGINT UNIQUE NOT NULL',
                 'status':'TEXT',
                 'status_bool':'INTEGER NOT NULL',
                 'cu_identifier':'TEXT NOT NULL',
@@ -93,10 +95,7 @@ DATABASES = {
                 'self_bool':'INTEGER DEFAULT 0',
                 'slave_bool':'INTEGER DEFAULT 0',
                 'parent_bool':'INTEGER DEFAULT 0',
-            },
-            'commands':{
-                'CREATE UNIQUE INDEX':'sysID01 ON controlunit (sysID)',
-            },
+            }
         },
         'systemregister':{
             'sort':0,
@@ -135,7 +134,7 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':'(default_system) REFERENCES systemregister (id)',
+                'FOREIGN KEY (default_system)':'REFERENCES systemregister (id)',
             }
         },
         'controleventconfig':{
@@ -157,10 +156,10 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':'(event_owner) REFERENCES systemregister (id)',
-                'FOREIGN KEY':'(target_up) REFERENCES systemregister (id)',
-                'FOREIGN KEY':'(target_down) REFERENCES systemregister (id)',
-                'FOREIGN KEY':'(event_type) REFERENCES eventtypes (id)',
+                'FOREIGN KEY (event_owner)':'REFERENCES systemregister (id)',
+                'FOREIGN KEY (target_up)':'REFERENCES systemregister (id)',
+                'FOREIGN KEY (target_down)':'REFERENCES systemregister (id)',
+                'FOREIGN KEY (event_type)':'REFERENCES eventtypes (id)',
             }
         },
         'controlevent':{
@@ -168,7 +167,7 @@ DATABASES = {
             'pk':{
                 'id':'INTEGER PRIMARY KEY',
             },
-            'sfields':{
+            'vfields':{
                 'control_sys':'INTEGER',
                 'event_config':'INTEGER',
                 'parent_event':'INTEGER',
@@ -180,18 +179,20 @@ DATABASES = {
                 'complete':'INTEGER DEFAULT 0',
                 'link_complete_req':'INTEGER DEFAULT 0',
                 'link_confirmed':'INTEGER DEFAULT 0',
+            },
+            'sfields':{
                 'last_date':'TIMESTAMP',
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY':'(control_sys) REFERENCES controlunit (sysID)',
-                'FOREIGN KEY':'(event_config) REFERENCES controleventconfig (id)',
-                'FOREIGN KEY':'(parent_event) REFERENCES controlevent (id)',
-                'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
-                'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
+                'FOREIGN KEY (control_sys)':'REFERENCES controlunit (sysID)',
+                'FOREIGN KEY (event_config)':'REFERENCES controleventconfig (id)',
+                'FOREIGN KEY (parent_event)':'REFERENCES controlevent (id)',
+                'FOREIGN KEY (source)':'REFERENCES systemregister (id)',
+                'FOREIGN KEY (target)':'REFERENCES systemregister (id)',
             },
             'commands':{
-                'CREATE UNIQUE INDEX':'transactionID_01 ON controlevent (control_sys,transactionID)',
+                'CREATE UNIQUE INDEX transactionID_01':'ON controlevent (control_sys,transactionID)',
             }
         },
         'commsqueue':{
@@ -217,12 +218,12 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL',
             },
             'constraints':{
-                'FOREIGN KEY':'(control_sys) REFERENCES controlunit (sysID)',
-                'FOREIGN KEY':'(source) REFERENCES systemregister (id)',
-                'FOREIGN KEY':'(target) REFERENCES systemregister (id)',
+                'FOREIGN KEY (control_sys)':'REFERENCES controlunit (sysID)',
+                'FOREIGN KEY (source)':'REFERENCES systemregister (id)',
+                'FOREIGN KEY (target)':'REFERENCES systemregister (id)',
             },
             'commands':{
-                'CREATE UNIQUE INDEX':'transactionID_02 ON commsqueue (control_sys,transactionID)',
+                'CREATE UNIQUE INDEX transactionID_02':'ON commsqueue (control_sys,transactionID)',
             },
         }
     }

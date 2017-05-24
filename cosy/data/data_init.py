@@ -58,17 +58,17 @@ def init_db(databases):
                     sql_str = sql_str + "%s %s, " % (pk, detail)
             
             if 'vfields' in db_sql_dict[table] :
-                for field, detail in db_sql_dict[table]['vfields'].iteritems():
-                    sql_str += "%s %s ," % (field, detail)
+                for vfield, detail in db_sql_dict[table]['vfields'].iteritems():
+                    sql_str += "%s %s, " % (vfield, detail)
             
             if 'sfields' in db_sql_dict[table] :
-                for field, detail in db_sql_dict[table]['sfields'].iteritems():
-                    sql_str += "%s %s, " % (field, detail)
+                for sfield, detail in db_sql_dict[table]['sfields'].iteritems():
+                    sql_str += "%s %s, " % (sfield, detail)
             
             if 'constraints' in db_sql_dict[table] :
-                for constraint, detail in db_sql_dict[table]['constraints'].iteritems():
-                    sql_str += "%s %s ," % (constraint, detail)
-            
+                for cfield, detail in db_sql_dict[table]['constraints'].iteritems():
+                    sql_str += "%s %s, " % (cfield, detail)
+                    
             # terminate sql statement
             sql_str = sql_str[:-2]
             sql_str += ");"
@@ -86,12 +86,12 @@ def init_db(databases):
     return True
 
 
-def init_user(table,user,passwd):
+def init_user(table,auth_json):
     """
     Create initial user credentials for cosy API access.
     TODO: Access user:password from secure file via ssh...
-    > 
-    < user3 (userID, user, password)
+    > table, json auth details
+    < user5 {'passwd': '', 'client_secret': '', 'id': , 'client_id': '', 'user': ''}
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -102,13 +102,18 @@ def init_user(table,user,passwd):
         conn = create_connection(db)
         
         # generate values to insert
-        user_detail = (user,user,passwd,datetime.now())
+        user_detail = (auth_json['user'],
+                       auth_json['user'],
+                       auth_json['passwd'],
+                       auth_json['client_id'],
+                       auth_json['client_secret'],
+                       datetime.now())
         
         # connection object as context manager
         with conn:
             cur = conn.cursor()
-            cur.execute("""INSERT OR REPLACE INTO {tn}(id, user, passwd, create_date) VALUES (
-                        (SELECT id FROM {tn} WHERE user = ?), ?, ?, ?
+            cur.execute("""INSERT OR REPLACE INTO {tn}(id, user, passwd, client_id, client_secret, create_date) VALUES (
+                        (SELECT id FROM {tn} WHERE user = ?), ?, ?, ?, ?, ?
                         )""".format(tn=table),user_detail)
             
             # get userID to return
@@ -117,10 +122,6 @@ def init_user(table,user,passwd):
     except sqlite3.OperationalError as e:
         logging.error('%s:%s: Table does not exist - database file missing?' % (script_file,func_name))
         raise e
-        
-    except Exception as e:
-        # connection object will rool back db
-        raise e
     
     finally:
         ##### Test
@@ -128,5 +129,8 @@ def init_user(table,user,passwd):
         #    print row
         
         conn.close()
+    
+    # add user id to auth_json > user5
+    auth_json['id'] = userID
         
-    return (userID,user,passwd)
+    return auth_json
