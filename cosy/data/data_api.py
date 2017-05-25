@@ -215,6 +215,7 @@ def get_api_token(user_id = False):
 def get_api_config(user_id, table, init=None, api_id=None):
     """
     Get API configuration based on init or ID.
+    # TODO: why None
     > user_id, table name, [init], [api id]
     < api5 (api_irl,cs_required,mt_required,tr_required,table_name), None
     
@@ -237,7 +238,7 @@ def get_api_config(user_id, table, init=None, api_id=None):
         else:
             cur.execute("SELECT api_url, cs_required, mt_required, tr_required, table_name FROM {tn} WHERE init = 0 ORDER BY id ASC".format(tn=table))
 
-        # returns (user_id, access_token, refresh_token) or None
+        # returns data or None
         api5 = cur.fetchall()
         
     except Exception as e:

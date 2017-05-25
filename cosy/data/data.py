@@ -191,11 +191,11 @@ def get_control(table):
     return id6
 
 
-def manage_comms(id6, insert_json = False, sent_conf = False):
+def manage_comms(id6, data_json = False, method = False):
     """
     Get comms for target system
     > id6, [API sent confirmation transactionID list]
-    < True, False
+    < True, (api_put, api_post, api_get)
     
     TODO - currently one way - need both ways
     
@@ -208,10 +208,10 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
         conn = create_connection(db)
         
 ####### Update comms queue from API call
-        if insert_json :
+        if method == 'insert' :
             
             with conn:
-                for json in insert_json :
+                for json in data_json :
                     conn.execute("""INSERT OR REPLACE INTO {tn} (id, comm_sent, control_sys, transactionID, source, target, data, priority, URI, complete_req, complete, last_date, user_id)
                                     VALUES (
                                     (SELECT id FROM {tn} WHERE control_sys = {cs} AND transactionID = {ti}),
@@ -233,11 +233,11 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
             # return true
             ret_val = True
         
-####### Update comms queue and events to confirm sent
-        elif sent_conf :
+####### Update comms queue and events
+        elif method == 'updatelist' :
             # iterate transactions and update sent in comms queue and event TODO: update many without iterator
             with conn:
-                for ident in sent_conf:
+                for ident in data_json:
                     conn.execute("UPDATE {tn} SET comm_sent = 1, URI=?, complete = ? WHERE control_sys = ? AND transactionID = ?;".format(tn=TB_COMM),ident)
                     # remove URI
                     ident = ident[1:]
@@ -355,7 +355,8 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
             ### get JSON comms events that need API GET - e.g. events generated locally requiring completion at API
             
             # define fields for select
-            fields = "control_sys, meter, data, transactionID, source, target, priority, complete_req, complete, URI"
+            #fields = "control_sys, meter, data, transactionID, source, target, priority, complete_req, complete, URI"
+            fields = "meter, transactionID, complete"
             
             # get data for comms sync
             cur.execute("""SELECT {tf} FROM {tn}
@@ -402,7 +403,7 @@ def manage_comms(id6, insert_json = False, sent_conf = False):
             api_put = cur.fetchall()
             
             # return pu and post JSON
-            ret_val = (api_put,api_post, api_get)
+            ret_val = (api_put, api_post, api_get)
             
             
     # connection object using 'with' will rool back db on exception and close on complete

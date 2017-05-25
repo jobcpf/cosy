@@ -63,7 +63,11 @@ def api_call(api_call, user_id = False, method = False, json = False):
             elif method == 'POST' :
                 r = requests.post(api_call, json=json, headers=auth_header)
             elif method == 'PUT' :
+                
+                print json
                 r = requests.put(api_call, json=json, headers=auth_header)
+                print r.json()
+                
             else :
                 r = requests.get(api_call, headers=auth_header)
             
@@ -123,4 +127,4 @@ def api_call(api_call, user_id = False, method = False, json = False):
     
     except requests.exceptions.ConnectionError as e:
         logging.error('%s:%s: ConnectionError: %s' % (script_file,func_name,e))
-        return (False, e)
+        return (False, 503)

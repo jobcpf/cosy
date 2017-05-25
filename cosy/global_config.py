@@ -56,6 +56,7 @@ SYS_DEFAULT = 31111 # default system type if not aquired from details.json
 
 # API call IDs
 COMM_API = 2 # cosy_api.sqlite.apiaccessconfig.id for API comm call GET, PUT, POST
+COMMS_API = 17 # cosy_api.sqlite.apiaccessconfig.id for API comms call MULTIPLE GET, PUT, POST
 
 ## Database - sqlite
 DB_API = 'cosy_api.sqlite' # database for API access credentials - TODO: encrypt

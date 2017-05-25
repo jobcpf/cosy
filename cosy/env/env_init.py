@@ -163,7 +163,7 @@ def init_environment():
 
 
 
-def config_environment(id6):
+def config_environment(id6, api_update = False):
     """
     Import environment configuration data (policy, config, registers)
     > id6
@@ -172,6 +172,10 @@ def config_environment(id6):
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Configure environment.' % (script_file,func_name))
+    
+    if api_update :
+        # refresh api list
+        api_updated = init_api(id6['user_id'])
     
     # get API calls marked as init
     api5_list = datp.get_api_config(id6['user_id'], TB_APICONF, init=True)
@@ -207,7 +211,7 @@ def get_id6(TB_CONTROL, refresh = False):
     """
     Get id6 from control config and return as tuple.
     > control unit table (TB_CONTROL), [refresh cuID from API]
-    < id6, False
+    < (True,id6), (False,Error info)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -221,7 +225,9 @@ def get_id6(TB_CONTROL, refresh = False):
         api_response = apac.api_call(id6['URI'], user_id = id6['user_id'], method = 'PUT', json = id6)
         
         if api_response[0]:
-            return id6
+            return (True,id6)
+        else:
+            return api_response
     
     # catch all re-init all
     id6 = init_environment()
@@ -229,6 +235,6 @@ def get_id6(TB_CONTROL, refresh = False):
         # populate environment config
         env_conf = config_environment(id6)
         if env_conf :
-            return id6
+            return (True,id6)
     
-    return False
+    return (False,None)
