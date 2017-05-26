@@ -96,31 +96,35 @@ def comm_sync(id6):
     
 ## API PUT (UPDATE)
     
-    ## api call for each PUT in list TODO: put all items at once.
-    #for comm_json in comms_putpostget[0]:
-    #    
-    #    # get API call from JSON
-    #    api_uri = comm_json.pop('URI')
-    #    
-    #    # make API call
-    #    api_response = apac.api_call(api_uri, user_id = id6['user_id'], method = 'PUT', json = comm_json)
-    #    
-    #    if api_response[0] :
-    #        update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
-    
     # api call for each PUT in list TODO: put all items at once.
-    comm_json = comms_putpostget[0]
+    for comm_json in comms_putpostget[0]:
+        
+        # get API call from JSON
+        api_uri = comm_json.pop('URI')
+        
+        # make API call
+        api_response = apac.api_call(api_uri, user_id = id6['user_id'], method = 'PUT', json = comm_json)
+        
+        if api_response[0] :
+            update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
     
-    print comm_json
     
-    # make API call
-    api_response = apac.api_call(api_comms_call, user_id = id6['user_id'], method = 'PUT', json = comm_json)
-    
-    if api_response[0] :
-        # iter responses and append for sent/update
-        for response in api_response[1] :
-            update_list.append((response['URI'],response['complete'],response['control_sys'],response['transactionID']))    
-    
+### API PUT (UPDATE) (MULTIPLE by sysID, transactionID)
+#    
+#    # api call for each PUT in list TODO: put all items at once.
+#    comm_json = comms_putpostget[0]
+#    
+#    print comm_json
+#    
+#    # make API call
+#    api_response = apac.api_call(api_comms_call, user_id = id6['user_id'], method = 'PUT', json = comm_json)
+#    
+#    if api_response[0] :
+#        # iter responses and append for sent/update
+#        for response in api_response[1] :
+#            update_list.append((response['URI'],response['complete'],response['control_sys'],response['transactionID']))    
+
+## API POST (MULTIPLE by sysID, transactionID)
 ## API POST
     
     # api call for each POST in list TODO: put all items at once.
@@ -147,9 +151,7 @@ def comm_sync(id6):
     #        update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
         
 
-## API GET (multiple by sysID, transactionID)
-
-
+## API GET (MULTIPLE by sysID, transactionID)
 
     # api call for each GET in list
     comm_json = comms_putpostget[2]
