@@ -10,6 +10,7 @@ Environmental Monitoring for cosy
 # Standard import
 import os.path
 import sys
+import time
 import json
 
 # temp
@@ -22,7 +23,7 @@ import data.data as data
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, TB_CEVENT
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################

@@ -11,6 +11,7 @@ Module ...
 # Standard import
 import os
 import sys
+import time
 from datetime import datetime
 
 import sqlite3 
@@ -18,10 +19,9 @@ import sqlite3
 
 # Import custom modules
 
-
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, DB_DATA, TB_COMM, TB_CEVENT, TB_CECONF
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # define working database for module
@@ -315,7 +315,7 @@ def manage_comms(id6, data_json = False, method = False):
                                         WHERE {ts}.control_sys = {tu}.control_sys
                                         AND {ts}.transactionID = {tu}.transactionID
                                         AND {ts}.complete = 1 
-                                        AND {tu}.complete = 0
+                                        AND NULLIF({tu}.complete,0) IS NULL
                                     );
                             """.format(tu=TB_COMM, ts=TB_CEVENT))
             
@@ -334,7 +334,7 @@ def manage_comms(id6, data_json = False, method = False):
                                         WHERE {ts}.control_sys = {tu}.control_sys
                                         AND {ts}.transactionID = {tu}.transactionID
                                         AND {ts}.complete = 1 
-                                        AND {tu}.complete = 0
+                                        AND NULLIF({tu}.complete,0) IS NULL
                                     );
                             """.format(tu=TB_CEVENT, ts=TB_COMM))
             
@@ -362,7 +362,7 @@ def manage_comms(id6, data_json = False, method = False):
             cur.execute("""SELECT {tf} FROM {tn}
                         WHERE comm_sent = 1
                         AND complete_req = 1
-                        AND complete = 0
+                        AND NULLIF(complete,0) IS NULL
                         AND URI NOT NULL
                         AND target < ?
                         ORDER BY priority DESC;
@@ -377,7 +377,7 @@ def manage_comms(id6, data_json = False, method = False):
             
             # get data for comms sync
             cur.execute("""SELECT {tf} FROM {tn}
-                        WHERE comm_sent = 0
+                        WHERE NULLIF(comm_sent,0) IS NULL
                         AND URI IS NULL
                         AND target < ?
                         ORDER BY priority DESC;
@@ -394,7 +394,7 @@ def manage_comms(id6, data_json = False, method = False):
             # get data for comms sync
             cur.execute("""SELECT {tf} FROM {tn}
                         WHERE complete = 1
-                        AND comm_sent = 0
+                        AND NULLIF(comm_sent,0) IS NULL
                         AND complete_req = 1
                         AND URI NOT NULL
                         ORDER BY priority DESC;

@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 """
-Module ...
+Module API access
 
 @Author: 
 @Date: 
-
-api_call: generic API call retrieving JSON
-
 
 """
 
@@ -15,6 +12,7 @@ api_call: generic API call retrieving JSON
 # Standard import
 import os
 import sys
+import time
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -25,8 +23,9 @@ import data.data_api as datp
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
+
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 

@@ -10,7 +10,9 @@ Environment Builder for COSY
 # Standard import
 import os.path
 import sys
+import time
 import json
+import socket
 
 # Import custom modules
 #import api.api_auth as apa
@@ -21,7 +23,7 @@ import data.data as data
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, BASE_URL,API_BASE, TB_APICONF, API_INIT, CU_INIT, TB_CONTROL, SYS_DETAIL, AUTH_DETAIL, DB_PATH
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # set database sql dictionary
@@ -89,13 +91,27 @@ def init_control(user_id):
         
         if api_response[0] :
             
-            # get system details from file
-            with open(SYS_DETAIL) as json_file:    
-                detail_json = json.load(json_file)
+            try: 
+                # get system details from file
+                with open(SYS_DETAIL) as json_file:    
+                    detail_json = json.load(json_file)
             
-            api_response[1][0]['details'] = str(detail_json)
-            api_response[1][0]['system_type'] = detail_json.get('system_type',SYS_DEFAULT)
+                api_response[1][0]['details'] = str(detail_json)
+                #api_response[1][0]['system_type'] = detail_json.get('system_type',SYS_DEFAULT) # permissive with default
+                api_response[1][0]['system_type'] = detail_json['system_type']
+                api_response[1][0]['uid'] = detail_json['uid']
+                
+                # get ip
+                api_response[1][0]['ip'] = socket.gethostbyname(socket.gethostname())
             
+            except IOError as e:
+                logging.error('%s:%s: loading %s failed for user: %s' % (script_file,func_name,SYS_DETAIL,user_id))
+                return False
+                
+            except KeyError as e:
+                logging.error('%s:%s: Key error in file %s %s (user: %s)' % (script_file,func_name,SYS_DETAIL,e, user_id))
+                return False
+                
             # put system details & type to API
             api_response = apac.api_call(api_response[1][0]['URI'], user_id = user_id, method = 'PUT', json = api_response[1][0])
             
@@ -140,12 +156,17 @@ def init_environment():
         
         if not os.path.isfile(os.path.join(DB_PATH,db_name)) :
             create_dbs = dati.init_db(DATABASES)
-            
+        
     logging.debug('%s:%s: Initiate user.' % (script_file,func_name))
     
     # get system details from file
-    with open(AUTH_DETAIL) as json_file:    
-        auth_json = json.load(json_file)
+    try:
+        with open(AUTH_DETAIL) as json_file:    
+            auth_json = json.load(json_file)
+                
+    except IOError as e:
+        logging.error('%s:%s: loading %s failed' % (script_file,func_name,AUTH_DETAIL))
+        return False
     
     # register user
     user5 = dati.init_user('user', auth_json)
@@ -158,7 +179,6 @@ def init_environment():
     # init control unit database
     id6 = init_control(user5['id'])
     
-    # return user ID and cuID
     return id6
 
 

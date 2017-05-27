@@ -9,6 +9,7 @@ Module: Common operations for databases
 
 import os
 import sys
+import time
 
 from datetime import datetime
 

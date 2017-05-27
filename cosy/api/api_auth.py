@@ -12,6 +12,7 @@ Module ...
 import os
 import sys
 import json
+import time
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -21,7 +22,7 @@ import data.data_api as datp
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, BASE_URL, TOKEN_URL
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################

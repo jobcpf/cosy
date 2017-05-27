@@ -11,6 +11,8 @@ Module ...
 # Standard import
 import os
 import sys
+import time
+
 from datetime import datetime
 
 import sqlite3 
@@ -21,7 +23,8 @@ import sqlite3
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, DB_API
+global now_file
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # define working database for module
@@ -236,7 +239,7 @@ def get_api_config(user_id, table, init=None, api_id=None):
         elif init:
             cur.execute("SELECT api_url, cs_required, mt_required, tr_required, table_name FROM {tn} WHERE init = 1 ORDER BY id ASC".format(tn=table))
         else:
-            cur.execute("SELECT api_url, cs_required, mt_required, tr_required, table_name FROM {tn} WHERE init = 0 ORDER BY id ASC".format(tn=table))
+            cur.execute("SELECT api_url, cs_required, mt_required, tr_required, table_name FROM {tn} WHERE NULLIF(init,0) IS NULL ORDER BY id ASC".format(tn=table))
 
         # returns data or None
         api5 = cur.fetchall()

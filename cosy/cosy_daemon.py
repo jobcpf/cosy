@@ -1,4 +1,3 @@
-#!/home/squirrel/virtualenvs/cosy_env/bin/python
 """
 Daemon Class for COSY
 
@@ -12,11 +11,6 @@ Daemon Class for COSY
 import sys, os, time, atexit
 from signal import SIGTERM 
 
-# execute module
-#sys.path.append("/home/squirrel/dev/cosy/cosy") # append python project directory root
-
-################## Variables #################################### Variables #################################### Variables ##################
-
 ################## Classes ###################################### Classes ###################################### Classes ####################
 
 class Daemon:
@@ -25,6 +19,7 @@ class Daemon:
 	
 	Usage: subclass the Daemon class and override the run() method
 	"""
+	
 	def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
 		self.stdin = stdin
 		self.stdout = stdout
@@ -143,4 +138,3 @@ class Daemon:
 		You should override this method when you subclass Daemon. It will be called after the process has been
 		daemonized by start() or restart().
 		"""
-

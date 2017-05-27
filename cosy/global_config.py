@@ -11,7 +11,7 @@ Global configuration data for cosy.
 import os
 import time
 import logging
-
+import json
 
 ################## Environment #################################### Environment #################################### Environment ##################
 
@@ -19,7 +19,6 @@ import logging
 if 'squirrel' in os.path.dirname(os.path.realpath(__file__)) :
     print "Executing on Squirrel dev environment"
     ENV = 1
-    
 
 ################## Env Variables #################################### Env Variables #################################### Env Variables ##################
 
@@ -31,7 +30,25 @@ if ENV == 1 : # dev environment on squirrel
     AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
     
     ## Path & URL
+    PID_FILE = '/var/mylog/daemon-cosy.pid'
     BASE_URL = 'http://172.16.32.40:8000'
+    
+    ## logging
+    use_logging = True
+    logdir = '/home/squirrel/dev/squirrel_dev/cosy_dev'
+    logfile = "%s/cosydev.log" % logdir
+    logging.basicConfig(filename=logfile,level=logging.DEBUG)
+
+elif ENV == 2 : # staging environment on squirrel
+    
+    ## Database - sqlite
+    DB_PATH = '/data/datashare'
+    SYS_DETAIL = '~/.gron/detail.json'
+    AUTH_DETAIL = '~/.gron/auth.json'
+    
+    ## Path & URL
+    PID_FILE = '/tmp/daemon-cosy.pid'
+    BASE_URL = 'http://www.grid-monitor.co.uk:8000'
     
     ## logging
     use_logging = True
@@ -41,6 +58,9 @@ if ENV == 1 : # dev environment on squirrel
 
 
 ################## Variables #################################### Variables #################################### Variables ##################
+
+# Daemon
+BASE_SLEEP = 5 # (seconds, 300s = 5min) base sleep period for Daemon re-runs
 
 # logging
 now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
@@ -71,25 +91,38 @@ TB_CECONF = 'controleventconfig' # control event configuration
 
 ### Temp
 
+#def getserial():
+#  # Extract serial from cpuinfo file
+#  cpuserial = "0000000000000000"
+#  try:
+#    f = open('/proc/cpuinfo','r')
+#    for line in f:
+#      if line[0:6]=='Serial':
+#        cpuserial = line[10:26]
+#    f.close()
+#  except:
+#    cpuserial = "ERROR000000000"
+#
+#  return cpuserial
+#
 #details = {'os':'4.10.8-200.fc25.x86_64',
 #           'hardware':'Raspberry Pi v3B',
 #           'system_type':31,
+#           'uid':getserial()
 #           }
 #
 #with open(SYS_DETAIL,"w") as outfile:
 #    json.dump(details,outfile)
 
-#details = {'user':'apiauth',
+
+#auth = {'user':'apiauth',
 #           'passwd':'bingowing',
 #            'client_id':'4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW',
 #            'client_secret':'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI',
 #           }
 #
 #with open(AUTH_DETAIL,"w") as outfile:
-#    json.dump(details,outfile)
+#    json.dump(auth,outfile)
 
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
-
-
-

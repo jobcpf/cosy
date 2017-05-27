@@ -11,6 +11,8 @@ Module to initiate data structures.
 # Standard import
 import os
 import sys
+import time
+
 from datetime import datetime
 
 import sqlite3 
@@ -20,7 +22,7 @@ import sqlite3
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import * # get global variables
+from global_config import logging, now_file, DB_API
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # define working database for module
