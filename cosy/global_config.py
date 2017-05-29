@@ -15,6 +15,8 @@ import json
 
 ################## Environment #################################### Environment #################################### Environment ##################
 
+ENV = None
+
 # get script file path to determine environment
 if 'squirrel' in os.path.dirname(os.path.realpath(__file__)) :
     print "Executing on Squirrel dev environment"
@@ -39,20 +41,21 @@ if ENV == 1 : # dev environment on squirrel
     logfile = "%s/cosydev.log" % logdir
     logging.basicConfig(filename=logfile,level=logging.DEBUG)
 
-elif ENV == 2 : # staging environment on squirrel
+else : # pi environment
     
     ## Database - sqlite
-    DB_PATH = '/data/datashare'
-    SYS_DETAIL = '~/.gron/detail.json'
-    AUTH_DETAIL = '~/.gron/auth.json'
+    DB_PATH = '/home/pi/cosy'
+    SYS_DETAIL = '/home/pi/cosy/script/detail.json'
+    AUTH_DETAIL = '/home/pi/cosy/script/auth.json'
     
     ## Path & URL
     PID_FILE = '/tmp/daemon-cosy.pid'
-    BASE_URL = 'http://www.grid-monitor.co.uk:8000'
+    #BASE_URL = 'http://www.grid-monitor.co.uk:8000'
+    BASE_URL = 'http://172.16.32.40:8000'
     
     ## logging
     use_logging = True
-    logdir = '/home/squirrel/dev/squirrel_dev/cosy_dev'
+    logdir = '/home/pi'
     logfile = "%s/cosydev.log" % logdir
     logging.basicConfig(filename=logfile,level=logging.DEBUG)
 
