@@ -29,7 +29,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
 
-def ReadChannel(channel):
+def ReadChannel(spi, channel):
     """
     Function to read SPI data from MCP3008 chip
     Channel must be an integer 0-7
@@ -41,19 +41,19 @@ def ReadChannel(channel):
     return data
     
 
-def ConvertVolts(data,places):
+def ConvertVolts(data, places):
     """
     Function to convert data to voltage level,
     rounded to specified number of decimal places.
     
     """
     volts = (data * 3.3) / float(1023)
-    volts = round(volts,places)
+    volts = round(volts, places)
     
     return volts
 
 
-def ConvertTemp(data,places):
+def ConvertTemp(data, places):
     """
     Function to calculate temperature from
     TMP36 data, rounded to specified number of decimal places.
@@ -71,10 +71,9 @@ def ConvertTemp(data,places):
     # 1023      280    3.30
     
     temp = ((data * 330)/float(1023))-50
-    temp = round(temp,places)
+    temp = round(temp, places)
     
     return temp
-
 
 
 
@@ -113,24 +112,24 @@ def envmon_data(id6):
         moisture_channel = 3
         
         # Read the light sensor data
-        light_level = ReadChannel(light_channel)
+        light_level = ReadChannel(spi,light_channel)
         light_volts = ConvertVolts(light_level,2)
         
         # Read the light sensor data
-        light2_level = ReadChannel(light2_channel)
+        light2_level = ReadChannel(spi,light2_channel)
         light2_volts = ConvertVolts(light2_level,2)
         
         # Read the moisture sensor data
-        moisture_level = ReadChannel(moisture_channel)
+        moisture_level = ReadChannel(spi,moisture_channel)
         moisture_volts = ConvertVolts(moisture_level,2)
         
         # Read the temperature sensor data
-        temp_level = ReadChannel(temp_channel)
+        temp_level = ReadChannel(spi,temp_channel)
         temp_volts = ConvertVolts(temp_level,2)
         temp       = ConvertTemp(temp_level,2)
         
         # Read the temperature sensor data
-        temp2_level = ReadChannel(temp2_channel)
+        temp2_level = ReadChannel(spi,temp2_channel)
         temp2_volts = ConvertVolts(temp2_level,2)
         temp2       = ConvertTemp(temp2_level,2)
         
