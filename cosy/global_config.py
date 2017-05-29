@@ -42,7 +42,10 @@ if ENV == 1 : # dev environment on squirrel
     logdir = '/home/squirrel/dev/squirrel_dev/cosy_dev'
     logfile = "%s/cosydev.log" % logdir
     logging.basicConfig(filename=logfile,level=logging.DEBUG)
-
+    
+    ## Temp / Test
+    SPOOF_DATA = True
+    
 else : # pi environment
     
     ## Database - sqlite
@@ -62,6 +65,9 @@ else : # pi environment
     logdir = '/home/pi'
     logfile = "%s/cosydev.log" % logdir
     logging.basicConfig(filename=logfile,level=logging.DEBUG)
+    
+    ## Temp / Test
+    SPOOF_DATA = False
 
 
 ################## Variables #################################### Variables #################################### Variables ##################
