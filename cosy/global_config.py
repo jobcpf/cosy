@@ -29,7 +29,9 @@ if ENV == 1 : # dev environment on squirrel
     ## Database - sqlite
     DB_PATH = '/data/datashare'
     SYS_DETAIL = '/home/squirrel/dev/cosy/script/detail.json'
+    SYS_SELECT = 0
     AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
+    AUTH_SELECT = 0
     
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
@@ -46,7 +48,9 @@ else : # pi environment
     ## Database - sqlite
     DB_PATH = '/home/pi/cosy'
     SYS_DETAIL = '/home/pi/cosy/script/detail.json'
+    SYS_SELECT = 1
     AUTH_DETAIL = '/home/pi/cosy/script/auth.json'
+    AUTH_SELECT = 1
     
     ## Path & URL
     PID_FILE = '/tmp/daemon-cosy.pid'
@@ -93,36 +97,33 @@ TB_CECONF = 'controleventconfig' # control event configuration
 
 
 ### Temp
-
-#def getserial():
-#  # Extract serial from cpuinfo file
-#  cpuserial = "0000000000000000"
-#  try:
-#    f = open('/proc/cpuinfo','r')
-#    for line in f:
-#      if line[0:6]=='Serial':
-#        cpuserial = line[10:26]
-#    f.close()
-#  except:
-#    cpuserial = "ERROR000000000"
 #
-#  return cpuserial
 #
-#details = {'os':'4.10.8-200.fc25.x86_64',
+#
+#details = [{'os':'4.10.8-200.fc25.x86_64',
+#           'hardware':'HP MicroServer',
+#           'system_type':31,
+#           'uid':0000000000000000
+#           },
+#          {'os':'raspberrypi 4.9.24-v7+',
 #           'hardware':'Raspberry Pi v3B',
 #           'system_type':31,
-#           'uid':getserial()
-#           }
+#           'uid':0000000000000001
+#           }]
 #
 #with open(SYS_DETAIL,"w") as outfile:
 #    json.dump(details,outfile)
-
-
-#auth = {'user':'apiauth',
-#           'passwd':'bingowing',
-#            'client_id':'4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW',
-#            'client_secret':'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI',
-#           }
+#
+#
+#auth = [{'user':'apitest',
+#        'passwd':'buggeryouall',
+#         'client_id':'4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW',
+#         'client_secret':'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI',
+#        },{'user':'piauth',
+#        'passwd':'bingowing',
+#         'client_id':'4aE5hkwDGImTothmtuJIt7nPWG7fi1q0zuIKVqFW',
+#         'client_secret':'q0GhaHeA924ClMNBWeDHkcHql3z378iHE7uGqjfXJ90PQ83OPkPXHQskhIwa8OZgYIo41kfGddC5ckS8e39gPYwKnCmG5SPkq0lraM2TTHWGBSmWSyB2axHWmwLxt8JI',
+#        }]
 #
 #with open(AUTH_DETAIL,"w") as outfile:
 #    json.dump(auth,outfile)

@@ -42,7 +42,7 @@ class CosyDaemon(Daemon):
             # logging
             now_file = time.strftime('%Y%m%d_%H%M%S')
             logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DAEMON (%s) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<</n' % (script_file,func_name,now_file))
-            print '%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DAEMON ( %s) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<' % (func_name,now_file)
+            #print '%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DAEMON ( %s) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<' % (func_name,now_file)
             
             
             # call script run script

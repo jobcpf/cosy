@@ -1,1 +1,1 @@
-{"hardware": "Raspberry Pi v3B", "os": "4.10.8-200.fc25.x86_64", "system_type": 31, "uid": "0000000000000000"}
+[{"hardware": "HP MicroServer", "os": "4.10.8-200.fc25.x86_64", "system_type": 31, "uid": 0}, {"hardware": "Raspberry Pi v3B", "os": "raspberrypi 4.9.24-v7+", "system_type": 31, "uid": 1}]

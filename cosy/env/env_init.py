@@ -23,7 +23,7 @@ import data.data as data
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
-from global_config import logging, now_file, BASE_URL,API_BASE, TB_APICONF, API_INIT, CU_INIT, TB_CONTROL, SYS_DETAIL, AUTH_DETAIL, DB_PATH
+from global_config import logging, now_file, BASE_URL,API_BASE, TB_APICONF, API_INIT, CU_INIT, TB_CONTROL, SYS_DETAIL, SYS_SELECT, AUTH_DETAIL, AUTH_SELECT, DB_PATH
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 # set database sql dictionary
@@ -31,6 +31,21 @@ from data.db_sql import DATABASES
 
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
+
+
+def getserial():
+  # Extract serial from cpuinfo file
+  cpuserial = "0000000000000000"
+  try:
+    f = open('/proc/cpuinfo','r')
+    for line in f:
+      if line[0:6]=='Serial':
+        cpuserial = line[10:26]
+    f.close()
+  except:
+    cpuserial = "ERROR000000000"
+
+  return cpuserial
 
 
 def init_api(user_id):
@@ -96,16 +111,23 @@ def init_control(user_id, token3):
             try: 
                 # get system details from file
                 with open(SYS_DETAIL) as json_file:    
-                    detail_json = json.load(json_file)
-            
+                    list_json = json.load(json_file)
+                
+                # get json from list
+                detail_json = list_json[SYS_SELECT]
+                
                 rdata[0]['details'] = str(detail_json)
                 #rdata[0]['system_type'] = detail_json.get('system_type',SYS_DEFAULT) # permissive with default
                 rdata[0]['system_type'] = detail_json['system_type']
-                rdata[0]['uid'] = detail_json['uid']
+                
+                # get uid from function
+                uid = getserial()
+                rdata[0]['uid'] = uid
+                #rdata[0]['uid'] = detail_json['uid']
                 
                 # get ip
                 rdata[0]['ip'] = socket.gethostbyname(socket.gethostname())
-            
+                
             except IOError as e:
                 logging.error('%s:%s: loading %s failed for user: %s' % (script_file,func_name,SYS_DETAIL,user_id))
                 return (False, 'IOError', token3)
@@ -164,8 +186,11 @@ def init_environment():
     # get system details from file
     try:
         with open(AUTH_DETAIL) as json_file:    
-            auth_json = json.load(json_file)
-                
+            list_json = json.load(json_file)
+            
+            # get json from list
+            auth_json = list_json[AUTH_SELECT]
+            
     except IOError as e:
         logging.error('%s:%s: loading %s failed' % (script_file,func_name,AUTH_DETAIL))
         return False
