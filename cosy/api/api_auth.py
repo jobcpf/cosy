@@ -28,7 +28,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
 # create database connection
-def get_new_token(token3 = False):
+def get_new_token(token3 = None, user_id = False):
     """
     Retrieve an access token for API:
     1. use refresh_token if token3 passed, OR
@@ -46,7 +46,7 @@ def get_new_token(token3 = False):
     user_details = False
     
     ## if token3 passed request auth token using refresh token
-    if token3 :
+    if token3 is not None:
         
         # get id for token user
         user_id = token3[0]
@@ -76,15 +76,15 @@ def get_new_token(token3 = False):
         
         if not user_details :
             # get user5 for authed user from db.user
-            user_details = datp.get_api_user()
-            
-        # get user id to pass
-        user_id = user_details['id']
+            user_details = datp.get_api_user(user_id = user_id)
         
         # check for user details
         if not user_details :
             logging.error('%s:%s: No user exists to retrieve token' % (script_file,func_name))
             user_details = datp.init_user()
+        
+        # get user id to pass
+        user_id = user_details['id']
         
         # build auth credentials
         params = {'grant_type':'password',

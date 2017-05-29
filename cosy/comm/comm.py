@@ -24,15 +24,17 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def comm_sync(id6):
+def comm_sync(id6, token3):
     """
     Sync comms with API
-    > id6
+    > id6, token3
     < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Sync Comms Queue for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
+    
+    rmsg = "Comm Sync completed: "
     
 ### GET API calls from db
     
@@ -63,14 +65,17 @@ def comm_sync(id6):
 ### GET from API
     
     # retrieve data from API
-    api_response = apac.api_call(api_comm_call, user_id = id6['user_id'])
+    rbool, rdata, token3 = apac.api_call(api_comm_call, token3 = token3)
     
     # insert data if returned
-    if api_response[0] :
-        data_inserted = data.manage_comms(id6, data_json = api_response[1], method = 'insert')
-    elif api_response[1] != 404:
+    if rbool :
+        data_inserted = data.manage_comms(id6, data_json = rdata, method = 'insert')
+        
+        rmsg += "GET (all), "
+    
+    elif rdata != 404:
         # exit sync and return response if error
-        return api_response
+        return (rbool, rdata, token3)
     
 ### UPDATE API
     
@@ -89,11 +94,13 @@ def comm_sync(id6):
         api_uri = comm_json.pop('URI')
         
         # make API call
-        api_response = apac.api_call(api_uri, user_id = id6['user_id'], method = 'PUT', json = comm_json)
+        rbool, rdata, token3 = apac.api_call(api_uri, token3 = token3, method = 'PUT', json = comm_json)
         
-        if api_response[0] :
-            update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
-    
+        if rbool :
+            update_list.append((rdata['URI'],rdata['complete'],rdata['control_sys'],rdata['transactionID']))
+            
+            rmsg += "PUT, "
+            
     
 ### API PUT (UPDATE) (MULTIPLE by sysID, transactionID)
 #    
@@ -117,10 +124,12 @@ def comm_sync(id6):
     for comm_json in comms_putpostget[1]:
         
         # make API call
-        api_response = apac.api_call(api_comm_call, user_id = id6['user_id'], method = 'POST', json = comm_json)
+        rbool, rdata, token3 = apac.api_call(api_comm_call, token3 = token3, method = 'POST', json = comm_json)
         
-        if api_response[0] :
-            update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
+        if rbool :
+            update_list.append((rdata['URI'],rdata['complete'],rdata['control_sys'],rdata['transactionID']))
+            
+            rmsg += "POST, "
 
 ## API POST (MULTIPLE by sysID, transactionID)
     #...
@@ -146,21 +155,23 @@ def comm_sync(id6):
     if comms_putpostget[2]:
         
         # make API call
-        api_response = apac.api_call(api_comms_call, user_id = id6['user_id'], method = 'GET', json = comms_putpostget[2])
+        rbool, rdata, token3 = apac.api_call(api_comms_call, token3 = token3, method = 'GET', json = comms_putpostget[2])
         
-        if api_response[0] :
+        if rbool :
             # iter responses and append for sent/update
-            for response in api_response[1] :
+            for response in rdata :
                 update_list.append((response['URI'],response['complete'],response['control_sys'],response['transactionID']))
-    
+                
+            rmsg += "GET (by sysID), "
+                
 ## CONFIRM API Updated
 
     if update_list :
         # Mark comms and events as sent
         comms_updated = data.manage_comms(id6,data_json = update_list, method = 'updatelist')
-        return comms_updated
+        return (True, rmsg, token3)
     
-    return False
+    return (False, rmsg, token3)
 
 
 ################## Script ###################################### Script ###################################### Script ####################

@@ -34,18 +34,21 @@ class CosyDaemon(Daemon):
     """
     
     def run(self):
+        
+        id6 = None
+        token3 = None
+        
         while True:
-            
-            # refresh global time for logging
-            global now_file
+            # logging
             now_file = time.strftime('%Y%m%d_%H%M%S')
+            logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DAEMON (%s) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<</n' % (script_file,func_name,now_file))
+            print '%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>> DAEMON ( %s) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<' % (func_name,now_file)
+            
             
             # call script run script
-            crun.cosy_run()
+            rbool, id6, token3 = crun.cosy_run(id6, token3)
             
-            print '%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s' % (func_name,now_file)
-            logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> %s' % (script_file,func_name,now_file))
-            
+            # delay/re-run
             time.sleep(BASE_SLEEP)
 
 

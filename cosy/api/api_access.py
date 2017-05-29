@@ -29,26 +29,18 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def api_call(api_call, user_id = False, method = False, json = False):
+def api_call(api_call, user_id = False, token3 = None, method = False, json = False):
     """
     Retrieve data from API using token.
-    > 'api call identifier', [user_id], 
-    < response tuple: (True,json data) or (False,http status code)
+    > 'api call identifier', [user_id], [token3], [method: PUT|POST|GET], [json data]
+    < response tuple: (True, json data, token3) or (False,http status code, token3)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Retrieve API Access details from API using Token Auth' % (script_file,func_name))
-    
-    # attempt to get existing token with or without user ID
-    if user_id :
-        # get last registered token from db by user ID
-        token3 = datp.get_api_token(user_id)
-    else:
-        # get last registered token from db
-        token3 = datp.get_api_token()
+    logging.debug('%s:%s: API call: %s' % (script_file,func_name,api_call))
     
     try:
-        get_new_token = False
+        get_token = False
         
         # test if token returned
         if token3 is not None :
@@ -60,26 +52,28 @@ def api_call(api_call, user_id = False, method = False, json = False):
             if method == 'GET' :
                 r = requests.get(api_call, json=json, headers=auth_header)
             elif method == 'POST' :
+                #print json
                 r = requests.post(api_call, json=json, headers=auth_header)
+                #print r.json()
             elif method == 'PUT' :
-                
                 #print json
                 r = requests.put(api_call, json=json, headers=auth_header)
                 #print r.json()
-                
             else :
+                #print json
                 r = requests.get(api_call, headers=auth_header)
-            
+                #print r.json()
+                
             # check for unauthorised using token
             if r.status_code == requests.codes.unauthorized:
                 logging.debug('%s:%s: API data retrieval unauthorised with token. Status Code: %s' % (script_file,func_name,r.status_code))
                 
-                get_new_token = True
+                get_token = True
                 
-        if token3 is None or get_new_token:
+        if token3 is None or get_token:
             
             # get new token (refresh > u:p)
-            token3 = apa.get_new_token(token3) # get new token and add to db
+            token3 = apa.get_new_token(token3 = token3, user_id = user_id) # get new token and add to db
             
             # build auth header
             auth_header = {'Authorization': 'Bearer %s' % token3[1]}
@@ -97,33 +91,33 @@ def api_call(api_call, user_id = False, method = False, json = False):
         # capture status codes from all calls
         if r.status_code == requests.codes.unauthorized:
             logging.error('%s:%s: API data retrieval unauthorised with token. Status Code: %s' % (script_file,func_name,r.status_code))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
         
         elif r.status_code == requests.codes.internal_server_error:
             logging.error('%s:%s: API caused an internal server error. Status Code: %s' % (script_file,func_name,r.status_code))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
         
         elif r.status_code == requests.codes.bad_request:
             logging.error('%s:%s: Bad request to API. Status Code: %s' % (script_file,func_name,r.status_code))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
 
         elif r.status_code == requests.codes.not_found:
             logging.error('%s:%s: Resource not found at API. Status Code: %s' % (script_file,func_name,r.status_code))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
         
-        elif r.status_code == requests.codes.forbidden:
+        elif r.status_code == requests.codes.forbidden: #403
             logging.error('%s:%s: Forbidden to access API. Status Code: %s' % (script_file,func_name,r.status_code))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
                         
         if r.headers['Content-Type'] in ['application/json'] :
             
             # return data
-            return (True,r.json())
+            return (True,r.json(),token3)
             
         else:
             logging.error('%s:%s: No valid JSON data retrieved from API' % (script_file,func_name))
-            return (False, r.status_code)
+            return (False, r.status_code, token3)
     
     except requests.exceptions.ConnectionError as e:
         logging.error('%s:%s: ConnectionError: %s' % (script_file,func_name,e))
-        return (False, 503)
+        return (False, 503, token3)

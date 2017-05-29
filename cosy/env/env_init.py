@@ -37,107 +37,109 @@ def init_api(user_id):
     """
     Retrieve API details from API Root Call
     > user_id
-    < True, False
+    < (True, None, token3), (False, None, None)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Initiate API details' % (script_file,func_name))
 
     # retrieve API calls from API Root
-    api_setup = apac.api_call('%s%s' % (BASE_URL,API_BASE))
+    api_setup = apac.api_call('%s%s' % (BASE_URL,API_BASE), user_id = user_id)
     
     # if details returned from API Root
     if api_setup[0]:
     
         # get available API calls
-        api_json = apac.api_call(api_setup[1][API_INIT])
+        rbool, rdata, token3 = apac.api_call(api_setup[1][API_INIT], token3 = api_setup[2])
         
         # insert to db
-        if api_json[0] :
+        if rbool :
         
             # insert json
-            api_updated = datp.insert_data(user_id,TB_APICONF,api_json[1])
-            return True
+            api_data_updated = datp.insert_data(user_id,TB_APICONF,rdata)
+            
+            if api_data_updated :
+                return (True, None, token3)
     
     # catchall return
     logging.error('%s:%s: Initiate API failed' % (script_file,func_name))
-    return False
+    return (False, None, None)
 
 
 
-def init_control(user_id):
+def init_control(user_id, token3):
     """
     Initiate control unit
-    > user_id
-    < id6 {'status': u'OK',
+    > user_id, token3
+    < (True, id6, token3), (False, Error, token3)
+    id6 {'status': u'OK',
            'user_id': 1,
            'status_bool': 1,
            'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
            'sysID': 710011,
-           'system_type': 31},
-           False
+           'system_type': 31}
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     logging.debug('%s:%s: Initiate control unit details for user: %s' % (script_file,func_name,user_id))
         
     # get control unit call from API root
-    api_response = apac.api_call('%s%s' % (BASE_URL,API_BASE))
+    rbool, rdata, token3 = apac.api_call('%s%s' % (BASE_URL,API_BASE), token3 = token3)
     
     # if details returned from API
-    if api_response[0]:
+    if rbool:
         # get control unit data from API
-        api_response = apac.api_call(api_response[1][CU_INIT])
+        rbool, rdata, token3 = apac.api_call(rdata[CU_INIT], token3 = token3)
         
-        if api_response[0] :
+        if rbool :
             
             try: 
                 # get system details from file
                 with open(SYS_DETAIL) as json_file:    
                     detail_json = json.load(json_file)
             
-                api_response[1][0]['details'] = str(detail_json)
-                #api_response[1][0]['system_type'] = detail_json.get('system_type',SYS_DEFAULT) # permissive with default
-                api_response[1][0]['system_type'] = detail_json['system_type']
-                api_response[1][0]['uid'] = detail_json['uid']
+                rdata[0]['details'] = str(detail_json)
+                #rdata[0]['system_type'] = detail_json.get('system_type',SYS_DEFAULT) # permissive with default
+                rdata[0]['system_type'] = detail_json['system_type']
+                rdata[0]['uid'] = detail_json['uid']
                 
                 # get ip
-                api_response[1][0]['ip'] = socket.gethostbyname(socket.gethostname())
+                rdata[0]['ip'] = socket.gethostbyname(socket.gethostname())
             
             except IOError as e:
                 logging.error('%s:%s: loading %s failed for user: %s' % (script_file,func_name,SYS_DETAIL,user_id))
-                return False
+                return (False, 'IOError', token3)
                 
             except KeyError as e:
-                logging.error('%s:%s: Key error in file %s %s (user: %s)' % (script_file,func_name,SYS_DETAIL,e, user_id))
-                return False
+                logging.error('%s:%s: Key error in file %s %s (user: %s)' % (script_file,func_name,SYS_DETAIL, e, user_id))
+                return (False, 'KeyError', token3)
                 
             # put system details & type to API
-            api_response = apac.api_call(api_response[1][0]['URI'], user_id = user_id, method = 'PUT', json = api_response[1][0])
+            rbool, rdata, token3 = apac.api_call(rdata[0]['URI'], token3 = token3, method = 'PUT', json = rdata[0])
             
-            if api_response[0] :
+            if rbool :
                 
                 # insert data to db
-                control_inserted = data.insert_data(user_id, TB_CONTROL, api_response[1])
+                control_inserted = data.insert_data(user_id, TB_CONTROL, rdata)
                 
                 # enforce self to cuID returned by API
-                sysID_self = data.manage_control(user_id, TB_CONTROL, api_response[1]['sysID'])
+                sysID_self = data.manage_control(user_id, TB_CONTROL, rdata['sysID'])
                 
                 if sysID_self:
                     
-                    # build id6
-                    id6  = {'status': api_response[1]['status'],
+                    # build id6 from API call response
+                    id6  = {'status': rdata['status'],
                             'user_id': user_id,
-                            'status_bool': api_response[1]['status_bool'],
-                            'URI': api_response[1]['URI'],
-                            'sysID': api_response[1]['sysID'],
-                            'system_type': api_response[1]['system_type']}
+                            'status_bool': rdata['status_bool'],
+                            'URI': rdata['URI'],
+                            'sysID': rdata['sysID'],
+                            'system_type': rdata['system_type']}
                     
-                    return id6
+                    return (True, id6, token3)
     
     # catch all return
     logging.error('%s:%s: Initiate control unit failed for user: %s' % (script_file,func_name,user_id))
-    return False
+    return (False, None, token3)
 
 
 
@@ -145,7 +147,7 @@ def init_environment():
     """
     Test environment and initiate where required.
     > 
-    < id6
+    < (True, id6, token3)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -173,21 +175,21 @@ def init_environment():
     
     logging.debug('%s:%s: Initiate API for user: %s' % (script_file,func_name,user5['user']))
     # init API for user
-    api_init = init_api(user5['id'])
+    rbool, rdata, token3 = init_api(user5['id'])
     
     logging.debug('%s:%s: Initiate control unit for user: %s' % (script_file,func_name,user5['user']))
     # init control unit database
-    id6 = init_control(user5['id'])
+    rbool, id6, token3 = init_control(user5['id'], token3)
     
-    return id6
+    return (rbool, id6, token3)
 
 
 
-def config_environment(id6, api_update = False):
+def config_environment(id6, token3, api_update = False):
     """
     Import environment configuration data (policy, config, registers)
-    > id6
-    < True
+    > id6, token3, [api_update]
+    < (True, id6, token3)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -195,7 +197,7 @@ def config_environment(id6, api_update = False):
     
     if api_update :
         # refresh api list
-        api_updated = init_api(id6['user_id'])
+        rbool, rdata, token3 = init_api(id6['user_id'])
     
     # get API calls marked as init
     api5_list = datp.get_api_config(id6['user_id'], TB_APICONF, init=True)
@@ -211,19 +213,18 @@ def config_environment(id6, api_update = False):
             api_call += "%s/" % id6['sysID']
         
         # retrieve data from API
-        api_response = apac.api_call(api_call, id6['user_id'])
+        rbool, rdata, token3 = apac.api_call(api_call, token3 = token3)
         
         # insert data if returned
-        if api_response[0] :
-            data_inserted = data.insert_data(id6['user_id'], api5[4], api_response[1])
+        if rbool :
+            data_inserted = data.insert_data(id6['user_id'], api5[4], rdata)
             
             if data_inserted :
                 continue
+            else:
+                logging.error('%s:%s: API data insert issue for API call: %s' % (script_file,func_name,api_call))
         
-        # catch all error
-        logging.error('%s:%s: API data issue for API call: %s' % (script_file,func_name,api_call))
-        
-    return True
+    return (True, id6, token3)
 
 
 
@@ -231,7 +232,7 @@ def get_id6(TB_CONTROL, refresh = False):
     """
     Get id6 from control config and return as tuple.
     > control unit table (TB_CONTROL), [refresh cuID from API]
-    < (True,id6), (False,Error info)
+    < (True, id6, token3), (False, Error info, token3), (False, None, None)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -241,20 +242,22 @@ def get_id6(TB_CONTROL, refresh = False):
     id6 = data.get_control(TB_CONTROL)
     
     if id6 and not refresh:
-        # push status of control unit to API (test API)
-        api_response = apac.api_call(id6['URI'], user_id = id6['user_id'], method = 'PUT', json = id6)
         
-        if api_response[0]:
-            return (True,id6)
-        else:
-            return api_response
+        # get last registered token from db by user ID
+        token3 = datp.get_api_token(id6['user_id'])
+        
+        # push status of control unit to API (test API)
+        rbool, rdata, token3 = apac.api_call(id6['URI'], token3 = token3, method = 'PUT', json = id6)
+        
+        return (True, id6, token3)
     
     # catch all re-init all
-    id6 = init_environment()
-    if id6 :
+    rbool, id6, token3 = init_environment()
+    if rbool :
         # populate environment config
-        env_conf = config_environment(id6)
-        if env_conf :
-            return (True,id6)
+        rbool, id6, token3 = config_environment(id6, token3)
+        
+        if rbool :
+            return (True, id6, token3)
     
-    return (False,None)
+    return (False, None, None)
