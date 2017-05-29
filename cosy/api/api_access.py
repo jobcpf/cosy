@@ -73,40 +73,52 @@ def api_call(api_call, user_id = False, token3 = None, method = False, json = Fa
         if token3 is None or get_token:
             
             # get new token (refresh > u:p)
-            token3 = apa.get_new_token(token3 = token3, user_id = user_id) # get new token and add to db
+            rbool, token3 = apa.get_new_token(token3 = token3, user_id = user_id) # get new token and add to db
             
-            # build auth header
-            auth_header = {'Authorization': 'Bearer %s' % token3[1]}
-            
-            # make request
-            if method == 'GET' :
-                r = requests.get(api_call, json=json, headers=auth_header)
-            elif method == 'POST' :
-                r = requests.post(api_call, json=json, headers=auth_header)
-            elif method == 'PUT' :
-                r = requests.put(api_call, json=json, headers=auth_header)
-            else :
-                r = requests.get(api_call, headers=auth_header)
+            # check if token returned
+            if rbool:
+                
+                # build auth header
+                auth_header = {'Authorization': 'Bearer %s' % token3[1]}
+                
+                # make request
+                if method == 'GET' :
+                    r = requests.get(api_call, json=json, headers=auth_header)
+                elif method == 'POST' :
+                    r = requests.post(api_call, json=json, headers=auth_header)
+                elif method == 'PUT' :
+                    r = requests.put(api_call, json=json, headers=auth_header)
+                else :
+                    r = requests.get(api_call, headers=auth_header)
+                    
+            else:
+                logging.error('%s:%s: Could not retrieve new token. Error: %s' % (script_file,func_name,token3))
+                return (False, token3, None)
             
         # capture status codes from all calls
         if r.status_code == requests.codes.unauthorized:
-            logging.error('%s:%s: API data retrieval unauthorised with token. Status Code: %s' % (script_file,func_name,r.status_code))
+            logging.error('%s:%s: API data retrieval unauthorised with token. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            print api_call, r.json()
             return (False, r.status_code, token3)
         
         elif r.status_code == requests.codes.internal_server_error:
-            logging.error('%s:%s: API caused an internal server error. Status Code: %s' % (script_file,func_name,r.status_code))
+            logging.error('%s:%s: API caused an internal server error. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            print api_call, r.json()
             return (False, r.status_code, token3)
         
         elif r.status_code == requests.codes.bad_request:
-            logging.error('%s:%s: Bad request to API. Status Code: %s' % (script_file,func_name,r.status_code))
+            logging.error('%s:%s: Bad request to API. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            print api_call, r.json()
             return (False, r.status_code, token3)
 
-        elif r.status_code == requests.codes.not_found:
-            logging.error('%s:%s: Resource not found at API. Status Code: %s' % (script_file,func_name,r.status_code))
+        elif r.status_code == requests.codes.not_found: # 404
+            logging.debug('%s:%s: Resource not found at API. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            #print "ERROR >>>>>>>>>>>>>", api_call, r.json()
             return (False, r.status_code, token3)
         
-        elif r.status_code == requests.codes.forbidden: #403
-            logging.error('%s:%s: Forbidden to access API. Status Code: %s' % (script_file,func_name,r.status_code))
+        elif r.status_code == requests.codes.forbidden: # 403
+            logging.error('%s:%s: Forbidden to access API. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            print api_call, r.json()
             return (False, r.status_code, token3)
                         
         if r.headers['Content-Type'] in ['application/json'] :

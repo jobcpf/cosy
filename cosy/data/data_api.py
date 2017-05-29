@@ -138,7 +138,8 @@ def insert_token(user_id, json):
     """
     Insert API Token for cosy API access. (Called from api_auth.get_new_token)
     > user id, token json
-    < token3 (userID, access_token, refresh_token)
+    < (True, token3), (False, None)
+    token3 = (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -166,7 +167,7 @@ def insert_token(user_id, json):
     except sqlite3.IntegrityError:
         # connection object will rool back db
         logging.error('%s:%s: item already exists' % (script_file,func_name))
-        return False
+        return (False, None)
     
     #except Exception as e:
     #    # connection object will rool back db
@@ -175,7 +176,7 @@ def insert_token(user_id, json):
     finally:
         conn.close()
         
-    return (user_id, json['access_token'], json['refresh_token'])
+    return (True,(user_id, json['access_token'], json['refresh_token']))
 
     
 

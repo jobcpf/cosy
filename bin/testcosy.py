@@ -53,5 +53,5 @@ token3 = None
 # call script run script
 rbool, id6, token3 = crun.cosy_run(id6, token3)
 
-print 'cosy_run: ',rbool
+print 'cosy_run: ',rbool,id6
 

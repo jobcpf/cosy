@@ -42,25 +42,21 @@ def cosy_run(id6 = None, token3 = None):
         # get id6 from database
         rbool, id6, token3 = eni.get_id6(TB_CONTROL)
     
-    print id6
-    
-    logging.debug('%s:%s: >>>>>>>>>>>>>> Run job for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
-    
-    
-    ## set status
-    ##sysID_self = data.manage_control(id6['user_id'], TB_CONTROL, id6['sysID'], "OK")
-    #
-    ## refresh environment
-    ##eni.config_environment(id6[1], api_update = True)
-    
-    
     # generate env data
     if id6 is not None:
+        logging.debug('%s:%s: >>>>>>>>>>>>>> Run job for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
+        
+        ## set status
+        ##sysID_self = data.manage_control(id6['user_id'], TB_CONTROL, id6['sysID'], "OK")
+        
+        ## refresh environment
+        ##eni.config_environment(id6[1], api_update = True)
+        
+        # generate environmental data
         env_data = em.envmon_data(id6)
         print "env data updated: ",env_data
         
-    # sync comms
-    if id6 is not None:
+        # sync comms
         rbool, comm_result, token3 = comm.comm_sync(id6, token3)
         
         # not authorised on GET for sysID - re-init container

@@ -35,7 +35,8 @@ def get_new_token(token3 = None, user_id = False):
     2. use username:password from db.user if 401 or no token3
     3. insert token into db.auth
     > [token3 ]
-    < token3 (userID, access_token, refresh_token)
+    < (True, token3), (False, Error Code)
+    token3 = (userID, access_token, refresh_token)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -101,15 +102,18 @@ def get_new_token(token3 = None, user_id = False):
         if r.headers['Content-Type'] in ['application/json'] :
             
             # insert token into db.auth
-            inserted = datp.insert_token(user_id, r.json())
+            rbool, token3 = datp.insert_token(user_id, r.json())
             
-            # returns token3 or False
-            return inserted
+            if rbool:
+                # returns token3 or False
+                return (True, token3)
+            else:
+                return (False, 'db insert error')
             
         else:
-            logging.error('%s:%s: No valid JSON data retrieved for API Token' % (script_file,func_name,user_details[1]))
-            return False
+            logging.error('%s:%s: No valid JSON data retrieved for API Token' % (script_file,func_name,user_details['user']))
+            return (False, r.headers['Content-Type'])
         
     else:
-        logging.error('%s:%s: Token retrieval failed for user %s with status code %s' % (script_file,func_name,user_details[1],r.status_code))
-        return False
+        logging.error('%s:%s: Token retrieval failed for user %s with status code %s' % (script_file,func_name,user_details['user'],r.status_code))
+        return (False, r.status_code)

@@ -35,7 +35,8 @@ if ENV == 1 : # dev environment on squirrel
     
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
-    BASE_URL = 'http://172.16.32.40:8000'
+    #BASE_URL = 'http://172.16.32.40:8000'
+    BASE_URL = 'http://www.grid-monitor.co.uk'
     
     ## logging
     use_logging = True
@@ -57,8 +58,8 @@ else : # pi environment
     
     ## Path & URL
     PID_FILE = '/tmp/daemon-cosy.pid'
-    #BASE_URL = 'http://www.grid-monitor.co.uk:8000'
-    BASE_URL = 'http://172.16.32.40:8000'
+    BASE_URL = 'http://www.grid-monitor.co.uk'
+    #BASE_URL = 'http://172.16.32.40:8000'
     
     ## logging
     use_logging = True
@@ -73,7 +74,7 @@ else : # pi environment
 ################## Variables #################################### Variables #################################### Variables ##################
 
 # Daemon
-BASE_SLEEP = 5 # (seconds, 300s = 5min) base sleep period for Daemon re-runs
+BASE_SLEEP = 300 # (seconds, 300s = 5min) base sleep period for Daemon re-runs
 
 # logging
 now_file = time.strftime('%Y%m%d_%H%M%S') # datetime for appending to file names
