@@ -29,7 +29,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def api_call(api_call, user_id = False, token3 = None, method = False, json = False):
+def api_call(api_call, user_id = False, token3 = None, method = None, json = False):
     """
     Retrieve data from API using token.
     > 'api call identifier', [user_id], [token3], [method: PUT|POST|GET], [json data]
@@ -37,7 +37,7 @@ def api_call(api_call, user_id = False, token3 = None, method = False, json = Fa
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: API call: %s' % (script_file,func_name,api_call))
+    logging.debug('%s:%s: API call (%s): %s' % (script_file,func_name,method,api_call))
     
     try:
         get_token = False
@@ -50,6 +50,7 @@ def api_call(api_call, user_id = False, token3 = None, method = False, json = Fa
             
             # make request
             if method == 'GET' :
+                #print json
                 r = requests.get(api_call, json=json, headers=auth_header)
             elif method == 'POST' :
                 #print json
@@ -103,10 +104,10 @@ def api_call(api_call, user_id = False, token3 = None, method = False, json = Fa
         
         elif r.status_code == requests.codes.internal_server_error:
             logging.error('%s:%s: API caused an internal server error. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
-            print api_call, r.json()
+            #print api_call, r.json()
             return (False, r.status_code, token3)
         
-        elif r.status_code == requests.codes.bad_request:
+        elif r.status_code == requests.codes.bad_request: # 400
             logging.error('%s:%s: Bad request to API. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
             print api_call, r.json()
             return (False, r.status_code, token3)

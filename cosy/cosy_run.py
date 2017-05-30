@@ -13,15 +13,20 @@ import os.path
 import sys
 import time
 
+import datetime
+import json
+
 # Import custom modules
 import env.env_init as eni
 import envmon.envmon as em
 import comm.comm as comm
+import data.data as data
+import api.api_access as apac
 
 ################## Variables #################################### Variables #################################### Variables ##################
 
 import global_config as gc
-from global_config import logging, now_file, TB_CONTROL
+from global_config import logging, now_file, TB_CONTROL, TB_POL, TB_CECONF, POL_CONF, POL_INT, POL_REFID, POL_SLEEP, POL_ENV
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 
@@ -29,7 +34,7 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Script ###################################### Script ###################################### Script ####################
 
-def cosy_run(id6 = None, token3 = None):
+def cosy_run(idst = None, token3 = None):
     """
     Run COSY script
     > 
@@ -38,35 +43,119 @@ def cosy_run(id6 = None, token3 = None):
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
     
-    if id6 is None :
-        # get id6 from database
-        rbool, id6, token3 = eni.get_id6(TB_CONTROL)
+    # starting status
+    status_string = ""
     
-    # generate env data
-    if id6 is not None:
-        logging.debug('%s:%s: >>>>>>>>>>>>>> Run job for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
+    if idst is None :
+        logging.debug('%s:%s: >>>>>>>>>>>>>> Retrieve credentials for API access <<<<<<<<<<<<<<' % (script_file,func_name))
+
+        # get idst from database
+        rbool, idst, token3 = eni.get_idst(TB_CONTROL)
         
-        ## set status
-        ##sysID_self = data.manage_control(id6['user_id'], TB_CONTROL, id6['sysID'], "OK")
+    # run processes for idst
+    if idst is not None:
+        logging.debug('%s:%s: >>>>>>>>>>>>>> Run for u/sys %s/%s <<<<<<<<<<<<<<' % (script_file,func_name,idst['user_id'],idst['sysID']))
         
-        ## refresh environment
-        ##eni.config_environment(id6[1], api_update = True)
+## GET POLICIES
         
-        # generate environmental data
-        env_data = em.envmon_data(id6)
-        print "env data updated: ",env_data
+        # get all policies relevent to user id
+        policies, eventconfig = data.get_policies(TB_POL, TB_CECONF, idst)
         
+## GET BASE REFRESH
+        
+        # get policy data for daemon
+        try :
+            daemon_policy = json.loads([policy for policy in policies if policy["id"] == POL_REFID][0]['policy_data'])
+            pol_sleep = daemon_policy['interval']
+        except (KeyError, IndexError, TypeError, ValueError,) as e :
+            logging.error('%s:%s: Error retrieving daemon policy for u/sys %s/%s - %s' % (script_file,func_name,idst['user_id'],idst['sysID'],e))
+            pol_sleep = POL_SLEEP
+            
+            status_string += "Daemon Policy Error (used default), "
+        
+## RUN CONFIG REFRESH
+        
+        # get policy data for config
+        try :
+            config_policy = json.loads([policy for policy in policies if policy["id"] == POL_CONF][0]['policy_data'])
+            pol_int = config_policy['interval']
+            last_config = datetime.datetime.strptime(idst['last_config'], '%Y-%m-%d %H:%M:%S.%f')
+            
+        except (KeyError, IndexError, TypeError, ValueError,) as e :
+            logging.error('%s:%s: Error retrieving config policy for u/sys %s/%s - %s' % (script_file,func_name,idst['user_id'],idst['sysID'],e))
+            pol_int = POL_INT
+            last_config = datetime.datetime.now()
+            
+            status_string += "Config Policy Error (used default), "
+            
+        # update configuration 
+        if datetime.datetime.now() > last_config + datetime.timedelta(seconds=pol_int) :
+            logging.debug('%s:%s: Refresh configuration for u/sys %s/%s' % (script_file,func_name,idst['user_id'],idst['sysID']))
+            ## refresh environment config
+            rbool, idst, token3 = eni.config_environment(idst, token3, api_update = True)
+        rbool, idst, token3 = eni.config_environment(idst, token3, api_update = True)
+        
+## RUN ENVIRONMENT MODULE
+        
+        # get policy data for environment module
+        try :
+            # get environment policy from policies
+            env_policy = [policy for policy in policies if policy["id"] == POL_ENV][0]
+            
+            # get default event data from dict
+            default_event = [eventcf for eventcf in eventconfig if eventcf["id"] == env_policy['default_event']][0]
+            
+            # get policy data
+            policy_data = env_policy['policy_data']
+            
+            # generate environmental data
+            env_data = em.envmon_data(idst, policy_data, default_event)
+            print "env data updated: ", env_data
+            
+        except (KeyError, IndexError, TypeError, ValueError,) as e :
+            logging.error('%s:%s: Error retrieving environment policy for u/sys %s/%s - %s' % (script_file,func_name,idst['user_id'],idst['sysID'],e))
+            
+            status_string += "Environmental Policy Error (aborted), "
+        
+        
+
+        
+## RUN COMMS UPDATE
         # sync comms
-        rbool, comm_result, token3 = comm.comm_sync(id6, token3)
+        rbool, comm_result, token3 = comm.comm_sync(idst, token3)
+        
+        if not rbool:
+            status_string += "Comms error, "
         
         # not authorised on GET for sysID - re-init container
         if comm_result == 403 :
-            # Permissions on control unit - re-init control
-            rbool, id6, token3 = eni.get_id6(TB_CONTROL, refresh = True)
+            # Permissions issue on control unit - re-init control
+            rbool, idst, token3 = eni.get_idst(TB_CONTROL, refresh = True)
         
+            if not rbool:
+                status_string += "Error re-initialising control unit, "
+
         print "comms updated: ",comm_result
         
-    return (True, id6, token3)
+## STATUS UPDATE
+        
+        # if error
+        if status_string :
+            # log error and upload
+            idst = data.manage_control(TB_CONTROL, idst['sysID'], method = 'status', data = status_string[:-2])
+            
+            # push status of control unit to API
+            rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
+        
+        # if status_bool was zero, now OK - reset
+        elif not idst['status_bool']: 
+            ## set status to OK
+            idst = data.manage_control(TB_CONTROL, idst['sysID'], method = 'status')
+            
+            # push status of control unit to API
+            rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
+        
+    return (True, idst, token3, pol_sleep)
 
 
 

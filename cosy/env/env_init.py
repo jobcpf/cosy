@@ -14,6 +14,8 @@ import time
 import json
 import socket
 
+from datetime import datetime
+
 # Import custom modules
 #import api.api_auth as apa
 import data.data_api as datp
@@ -86,13 +88,14 @@ def init_control(user_id, token3):
     """
     Initiate control unit
     > user_id, token3
-    < (True, id6, token3), (False, Error, token3)
-    id6 {'status': u'OK',
-           'user_id': 1,
-           'status_bool': 1,
-           'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
-           'sysID': 710011,
-           'system_type': 31}
+    < (True, idst, token3), (False, Error, token3)
+    idst {'status': u'OK',
+          'user_id': 1,
+          'status_bool': 1,
+          'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
+          'sysID': 710011,
+          'system_type': 31,
+          'last_config: [date],}
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -145,19 +148,21 @@ def init_control(user_id, token3):
                 control_inserted = data.insert_data(user_id, TB_CONTROL, rdata)
                 
                 # enforce self to cuID returned by API
-                sysID_self = data.manage_control(user_id, TB_CONTROL, rdata['sysID'])
+                idst = data.manage_control(TB_CONTROL, rdata['sysID'], method = 'self')
                 
-                if sysID_self:
+                if idst:
                     
-                    # build id6 from API call response
-                    id6  = {'status': rdata['status'],
+                    # build idst from API call response
+                    idst  = {'status': rdata['status'],
                             'user_id': user_id,
                             'status_bool': rdata['status_bool'],
                             'URI': rdata['URI'],
                             'sysID': rdata['sysID'],
-                            'system_type': rdata['system_type']}
+                            'system_type': rdata['system_type'],
+                            'last_config':str(datetime.now()),
+                            }
                     
-                    return (True, id6, token3)
+                    return (True, idst, token3)
     
     # catch all return
     logging.error('%s:%s: Initiate control unit failed for user: %s' % (script_file,func_name,user_id))
@@ -169,7 +174,7 @@ def init_environment():
     """
     Test environment and initiate where required.
     > 
-    < (True, id6, token3)
+    < (True, idst, token3)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -204,17 +209,17 @@ def init_environment():
     
     logging.debug('%s:%s: Initiate control unit for user: %s' % (script_file,func_name,user5['user']))
     # init control unit database
-    rbool, id6, token3 = init_control(user5['id'], token3)
+    rbool, idst, token3 = init_control(user5['id'], token3)
     
-    return (rbool, id6, token3)
+    return (rbool, idst, token3)
 
 
 
-def config_environment(id6, token3, api_update = False):
+def config_environment(idst, token3, api_update = False):
     """
     Import environment configuration data (policy, config, registers)
-    > id6, token3, [api_update]
-    < (True, id6, token3)
+    > idst, token3, [api_update]
+    < (True, idst, token3)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -222,10 +227,10 @@ def config_environment(id6, token3, api_update = False):
     
     if api_update :
         # refresh api list
-        rbool, rdata, token3 = init_api(id6['user_id'])
+        rbool, rdata, token3 = init_api(idst['user_id'])
     
     # get API calls marked as init
-    api5_list = datp.get_api_config(id6['user_id'], TB_APICONF, init=True)
+    api5_list = datp.get_api_config(idst['user_id'], TB_APICONF, init=True)
     
     # iterate calls 
     for api5 in api5_list :
@@ -235,54 +240,60 @@ def config_environment(id6, token3, api_update = False):
         
         # append optional elements to API call URI
         if api5[1] :
-            api_call += "%s/" % id6['sysID']
+            api_call += "%s/" % idst['sysID']
         
         # retrieve data from API
         rbool, rdata, token3 = apac.api_call(api_call, token3 = token3)
         
         # insert data if returned
         if rbool :
-            data_inserted = data.insert_data(id6['user_id'], api5[4], rdata)
+            data_inserted = data.insert_data(idst['user_id'], api5[4], rdata)
             
             if data_inserted :
                 continue
             else:
                 logging.error('%s:%s: API data insert issue for API call: %s' % (script_file,func_name,api_call))
-        
-    return (True, id6, token3)
+                return (False, idst, token3)
+    
+    # update last_config for control unit
+    config_update = data.manage_control(TB_CONTROL, idst['sysID'], method = 'config')
+    
+    
+    return (True, idst, token3)
 
 
 
-def get_id6(TB_CONTROL, refresh = False):
+def get_idst(TB_CONTROL, refresh = False):
     """
-    Get id6 from control config and return as tuple.
+    Get idst from control config and return as tuple.
     > control unit table (TB_CONTROL), [refresh cuID from API]
-    < (True, id6, token3), (False, Error info, token3), (False, None, None)
+    < (True, idst, token3), (False, Error info, token3), (False, None, None)
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Get id6 from table: %s' % (script_file,func_name,TB_CONTROL))
+    logging.debug('%s:%s: Get idst from table: %s' % (script_file,func_name,TB_CONTROL))
     
-    # get id6 from database
-    id6 = data.get_control(TB_CONTROL)
+    # get idst from database
+    #idst = data.get_control(TB_CONTROL)
+    idst = data.manage_control(TB_CONTROL)
     
-    if id6 and not refresh:
+    if idst and not refresh:
         
         # get last registered token from db by user ID
-        token3 = datp.get_api_token(id6['user_id'])
+        token3 = datp.get_api_token(idst['user_id'])
         
         # push status of control unit to API (test API)
-        rbool, rdata, token3 = apac.api_call(id6['URI'], token3 = token3, method = 'PUT', json = id6)
+        rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
         
-        return (True, id6, token3)
+        return (True, idst, token3)
     
     # catch all re-init all
-    rbool, id6, token3 = init_environment()
+    rbool, idst, token3 = init_environment()
     if rbool :
         # populate environment config
-        rbool, id6, token3 = config_environment(id6, token3)
+        rbool, idst, token3 = config_environment(idst, token3)
         
         if rbool :
-            return (True, id6, token3)
+            return (True, idst, token3)
     
     return (False, None, None)

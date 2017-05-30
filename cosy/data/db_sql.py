@@ -95,6 +95,7 @@ DATABASES = {
                 'self_bool':'INTEGER DEFAULT 0',
                 'slave_bool':'INTEGER DEFAULT 0',
                 'parent_bool':'INTEGER DEFAULT 0',
+                'last_config':'TIMESTAMP',
             }
         },
         'systemregister':{
@@ -126,6 +127,7 @@ DATABASES = {
             'vfields':{
                 'id':'INTEGER PRIMARY KEY',
                 'default_system':'INTEGER',
+                'default_event':'INTEGER',
                 'name':'TEXT',
                 'policy_data':'TEXT',
             },
@@ -141,7 +143,6 @@ DATABASES = {
             'sort':2,
             'vfields':{
                 'id':'INTEGER PRIMARY KEY',
-                'event_owner':'INTEGER',
                 'target_up':'INTEGER',
                 'target_down':'INTEGER',
                 'event_type':'INTEGER NOT NULL',
@@ -156,7 +157,6 @@ DATABASES = {
                 'user_id':'INTEGER NOT NULL'
             },
             'constraints':{
-                'FOREIGN KEY (event_owner)':'REFERENCES systemregister (id)',
                 'FOREIGN KEY (target_up)':'REFERENCES systemregister (id)',
                 'FOREIGN KEY (target_down)':'REFERENCES systemregister (id)',
                 'FOREIGN KEY (event_type)':'REFERENCES eventtypes (id)',

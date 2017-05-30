@@ -35,8 +35,9 @@ class CosyDaemon(Daemon):
     
     def run(self):
         
-        id6 = None
+        idst = None
         token3 = None
+        pol_sleep = BASE_SLEEP
         
         while True:
             # logging
@@ -46,10 +47,10 @@ class CosyDaemon(Daemon):
             
             
             # call script run script
-            rbool, id6, token3 = crun.cosy_run(id6, token3)
+            rbool, idst, token3, pol_sleep = crun.cosy_run(idst, token3)
             
             # delay/re-run
-            time.sleep(BASE_SLEEP)
+            time.sleep(pol_sleep)
 
 
 ################## Scripts ###################################### Scripts ###################################### Scripts ####################

@@ -24,15 +24,15 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
-def comm_sync(id6, token3):
+def comm_sync(idst, token3):
     """
     Sync comms with API
-    > id6, token3
+    > idst, token3
     < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Sync Comms Queue for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
+    logging.debug('%s:%s: Sync Comms Queue for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
     
     rmsg = "Comm Sync completed: "
     
@@ -41,26 +41,26 @@ def comm_sync(id6, token3):
     ## comms list API call
     
     # get API call for comm queue
-    comm_api_list = datp.get_api_config(id6['user_id'], TB_APICONF, init = False, api_id = COMM_API)
+    comm_api_list = datp.get_api_config(idst['user_id'], TB_APICONF, init = False, api_id = COMM_API)
     
     # build API call URI using first call (should only be one)
     api_comm_call = '%s%s%s' % (BASE_URL,API_BASE,comm_api_list[0][0])
     
     # append optional elements to API call URI
     if api_comm_call[1] :
-        api_comm_call += "%s/" % id6['sysID']
+        api_comm_call += "%s/" % idst['sysID']
     
     ## multiple get/put API call
     
     # get API call for comm queue
-    comm_api_list = datp.get_api_config(id6['user_id'], TB_APICONF, init = False, api_id = COMMS_API)
+    comm_api_list = datp.get_api_config(idst['user_id'], TB_APICONF, init = False, api_id = COMMS_API)
     
     # build API call URI using first call (should only be one)
     api_comms_call = '%s%s%s' % (BASE_URL,API_BASE,comm_api_list[0][0])
     
     # append optional elements to API call URI
     if api_comms_call[1] :
-        api_comms_call += "%s/" % id6['sysID']
+        api_comms_call += "%s/" % idst['sysID']
     
 ### GET from API
     
@@ -69,7 +69,7 @@ def comm_sync(id6, token3):
     
     # insert data if returned
     if rbool :
-        data_inserted = data.manage_comms(id6, data_json = rdata, method = 'insert')
+        data_inserted = data.manage_comms(idst, data_json = rdata, method = 'insert')
         
         rmsg += "GET (all), "
     
@@ -80,7 +80,7 @@ def comm_sync(id6, token3):
 ### UPDATE API
     
     # get list of comms items requiring API update
-    comms_putpostget = data.manage_comms(id6)
+    comms_putpostget = data.manage_comms(idst)
     
     # updated list to pass
     update_list = []
@@ -110,7 +110,7 @@ def comm_sync(id6, token3):
 #    print comm_json
 #    
 #    # make API call
-#    api_response = apac.api_call(api_comms_call, user_id = id6['user_id'], method = 'PUT', json = comm_json)
+#    api_response = apac.api_call(api_comms_call, user_id = idst['user_id'], method = 'PUT', json = comm_json)
 #    
 #    if api_response[0] :
 #        # iter responses and append for sent/update
@@ -143,7 +143,7 @@ def comm_sync(id6, token3):
     #    api_uri = comm_json.pop('URI')
     #    
     #    # make API call
-    #    api_response = apac.api_call(api_uri, user_id = id6['user_id'], method = 'GET', json = comm_json)
+    #    api_response = apac.api_call(api_uri, user_id = idst['user_id'], method = 'GET', json = comm_json)
     #    
     #    if api_response[0] :
     #        update_list.append((api_response[1]['URI'],api_response[1]['complete'],api_response[1]['control_sys'],api_response[1]['transactionID']))
@@ -168,10 +168,10 @@ def comm_sync(id6, token3):
 
     if update_list :
         # Mark comms and events as sent
-        comms_updated = data.manage_comms(id6,data_json = update_list, method = 'updatelist')
-        return (True, rmsg, token3)
+        comms_updated = data.manage_comms(idst, data_json = update_list, method = 'updatelist')
+        #return (True, rmsg, token3)
     
-    return (False, rmsg, token3)
+    return (True, rmsg, token3)
 
 
 ################## Script ###################################### Script ###################################### Script ####################

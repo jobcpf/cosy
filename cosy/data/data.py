@@ -65,7 +65,7 @@ def insert_data(user_id, table, json):
     except sqlite3.IntegrityError as e:
         logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
         #raise e
-        return False # returns false if no control unit discovered...
+        return False # e.g. returns false if no control unit discovered...
 
     except sqlite3.OperationalError as e:
         logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
@@ -86,11 +86,18 @@ def insert_data(user_id, table, json):
     return True
 
 
-def manage_control(user_id, table, sysID, status = None):
+def manage_control(table, sysID = None, method = None, data = None):
     """
     Enforce 'self' bool for control unit
     > user_id, table, sysID, [status]
-    < True, False
+    < idst, False
+    idst:{'status': u'OK',
+          'user_id': 1,
+          'status_bool': 1,
+          'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
+          'sysID': 710011,
+          'system_type': 31,
+          'last_config: [date],}
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
@@ -104,18 +111,33 @@ def manage_control(user_id, table, sysID, status = None):
         # connection object as context manager
         with conn:
             
-            if status is not None :
+            if method == 'status':
                 # status update
-                if status == 'OK':
-                    conn.execute("UPDATE {tn} SET status_bool = 1, status = ? WHERE sysID = ?;".format(tn=table),(status,sysID))
+                if data is None:
+                    conn.execute("UPDATE {tn} SET status_bool = 1, status = 'OK' WHERE sysID = ?;".format(tn=table),(sysID,))
                 else:
-                    conn.execute("UPDATE {tn} SET status_bool = 0, status = ? WHERE sysID = ?;".format(tn=table),(status,sysID))
-                
-            else:
+                    conn.execute("UPDATE {tn} SET status_bool = 0, status = ? WHERE sysID = ?;".format(tn=table),(data,sysID))
+            elif method == 'config':
+                conn.execute("UPDATE {tn} SET last_config = ? WHERE sysID = ?;".format(tn=table),(datetime.now(),sysID))
+            elif method == 'self':
                 # enforce cuID
                 conn.execute("UPDATE {tn} SET self_bool = 0;".format(tn=table))
                 conn.execute("UPDATE {tn} SET self_bool = 1 WHERE sysID = ?;".format(tn=table),(sysID,))
-
+        
+            ###### Test
+            #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+            #    print row
+            
+            ## get idst to return
+            
+            # over write row_factory to return JSON
+            conn.row_factory = dict_factory
+            cur = conn.cursor()
+        
+            # get data
+            cur.execute("SELECT user_id, sysID, system_type, status_bool, status, URI, last_config from {tn} WHERE self_bool = 1;".format(tn=table))
+            idst = cur.fetchone()
+        
     # connection object using 'with' will rool back db on exception and close on complete
     except sqlite3.IntegrityError as e:
         logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
@@ -124,55 +146,6 @@ def manage_control(user_id, table, sysID, status = None):
 
     except sqlite3.OperationalError as e:
         logging.error('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
-        raise e
-        #return False
-
-    except sqlite3.ProgrammingError as e:
-        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
-        raise e
-        #return False
-    
-    finally:
-        ##### Test
-        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
-        #    print row
-            
-        conn.close()
-        
-    return True
-
-
-def get_control(table):
-    """
-    Get control unit and associated userID
-    > 
-    < id6 {'status': u'OK',
-           'user_id': 1,
-           'status_bool': 1,
-           'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
-           'sysID': 710011,
-           'system_type': 31},
-           False
-    
-    """
-    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Get active control unit and associated user id from table: %s' % (script_file,func_name,table))
-
-    try :
-        # connect to / create db
-        conn = create_connection(db)
-        
-        # over write row_factory to return JSON
-        conn.row_factory = dict_factory
-        
-        cur = conn.cursor()
-        
-        # get data
-        cur.execute("SELECT user_id, sysID, system_type, status_bool, status, URI from {tn} WHERE self_bool = 1;".format(tn=table))
-        id6 = cur.fetchone()
-            
-    except sqlite3.OperationalError as e:
-        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
         #raise e
         return False
 
@@ -182,19 +155,65 @@ def get_control(table):
         #return False
     
     finally:
-        ##### Test
-        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
-        #    print row
-            
         conn.close()
         
-    return id6
+    return idst
 
 
-def manage_comms(id6, data_json = False, method = False):
+#def get_control(table):
+#    """
+#    Get control unit and associated userID
+#    > table
+#    < idst, False
+#    idst:{'status': u'OK',
+#          'user_id': 1,
+#          'status_bool': 1,
+#          'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
+#          'sysID': 710011,
+#          'system_type': 31,
+#          'last_config: [date],}
+#    
+#    """
+#    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+#    logging.debug('%s:%s: Get active control unit and associated user id from table: %s' % (script_file,func_name,table))
+#
+#    try :
+#        # connect to / create db
+#        conn = create_connection(db)
+#        
+#        # over write row_factory to return JSON
+#        conn.row_factory = dict_factory
+#        
+#        cur = conn.cursor()
+#        
+#        # get data
+#        cur.execute("SELECT user_id, sysID, system_type, status_bool, status, URI, last_config from {tn} WHERE self_bool = 1;".format(tn=table))
+#        idst = cur.fetchone()
+#            
+#    except sqlite3.OperationalError as e:
+#        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+#        #raise e
+#        return False
+#
+#    except sqlite3.ProgrammingError as e:
+#        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
+#        raise e
+#        #return False
+#    
+#    finally:
+#        ##### Test
+#        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+#        #    print row
+#            
+#        conn.close()
+#        
+#    return idst
+
+
+def manage_comms(idst, data_json = False, method = False):
     """
     Get comms for target system
-    > id6, [API sent confirmation transactionID list]
+    > idst, [API sent confirmation transactionID list]
     < True, (api_put, api_post, api_get)
     
     TODO - currently one way - need both ways
@@ -228,7 +247,7 @@ def manage_comms(id6, data_json = False, method = False):
                                 json.get('complete_req',0),
                                 json.get('complete',0),
                                 datetime.now(),
-                                id6['user_id']
+                                idst['user_id']
                                 ))
             # return true
             ret_val = True
@@ -262,7 +281,7 @@ def manage_comms(id6, data_json = False, method = False):
                                         SELECT a.*
                                         FROM {tn} AS a
                                         INNER JOIN {tu} AS b ON a.transactionID = b.transactionID AND a.control_sys = b.control_sys
-                                    );""".format(tn=TB_COMM,tu=TB_CEVENT),(id6['sysID'], id6['system_type']))
+                                    );""".format(tn=TB_COMM,tu=TB_CEVENT),(idst['sysID'], idst['system_type']))
             
             ### NEW EVENTS >> COMMS QUEUE
                 
@@ -298,7 +317,7 @@ def manage_comms(id6, data_json = False, method = False):
                                         INNER JOIN {tu} AS c ON b.control_sys = c.control_sys AND b.transactionID = c.transactionID
                                         WHERE a.transactionID = b.transactionID
                                     )
-                                    ;""".format(tn=TB_CEVENT,tu=TB_COMM),(id6['sysID'], id6['system_type']))
+                                    ;""".format(tn=TB_CEVENT,tu=TB_COMM),(idst['sysID'], idst['system_type']))
   
             ### UPDATE EVENTS >> COMMS QUEUE
             
@@ -366,7 +385,7 @@ def manage_comms(id6, data_json = False, method = False):
                         AND URI NOT NULL
                         AND target < ?
                         ORDER BY priority DESC;
-                        """.format(tn=TB_COMM,tf=fields),(id6['system_type'],))
+                        """.format(tn=TB_COMM,tf=fields),(idst['system_type'],))
             
             api_get = cur.fetchall()
 
@@ -381,7 +400,7 @@ def manage_comms(id6, data_json = False, method = False):
                         AND URI IS NULL
                         AND target < ?
                         ORDER BY priority DESC;
-                        """.format(tn=TB_COMM,tf=fields),(id6['system_type'],))
+                        """.format(tn=TB_COMM,tf=fields),(idst['system_type'],))
             
             api_post = cur.fetchall()
             
@@ -438,4 +457,129 @@ def manage_comms(id6, data_json = False, method = False):
     return ret_val
 
 
+def get_policies(tb_pol, tb_ceconf, idst):
+    """
+    Get policies associated with control unit
+    > policy table, event config table, idst
+    < policies, eventconfig
+    
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    logging.debug('%s:%s: Get policies (%s) and event config (%s)' % (script_file,func_name,tb_pol,tb_ceconf))
 
+    try :
+        # connect to / create db
+        conn = create_connection(db)
+        
+        # over write row_factory to return JSON
+        conn.row_factory = dict_factory
+        
+        cur = conn.cursor()
+        
+        # get data
+        cur.execute("""SELECT id, name, policy_data, default_event
+                    FROM {tn}
+                    WHERE user_id = ?
+                    ;""".format(tn=tb_pol),(idst['user_id'],))
+        policies = cur.fetchall()
+        
+        cur.execute("""SELECT *
+                    FROM {tn}
+                    WHERE user_id = ?
+                    ;""".format(tn=tb_ceconf),(idst['user_id'],))
+        eventconfig = cur.fetchall()
+        
+    except sqlite3.OperationalError as e:
+        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        #raise e
+        return False
+        
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+    
+    finally:
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+        #    print row
+            
+        conn.close()
+        
+    return policies, eventconfig
+
+
+def manage_event(table, user_id, method = None, data = None):
+    """
+    Manage events 
+    > table, method (last_event, ...), data
+    < last event
+    
+    """
+    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    logging.debug('%s:%s: Manage events in table %s' % (script_file,func_name, table))
+
+    try :
+        # connect to / create db
+        conn = create_connection(db)
+        
+        # over write row_factory to return JSON
+        conn.row_factory = dict_factory
+        
+        # connection object as context manager
+        with conn:
+            
+            cur = conn.cursor()
+            
+            # get last event
+            if method == 'last_event':
+                
+                # get data
+                cur.execute("""SELECT *
+                            FROM {tn}
+                            WHERE event_config = ?
+                            ORDER BY last_date DESC
+                            LIMIT 1
+                            ;""".format(tn=table),(data,))
+                rdata = cur.fetchone()
+            
+            # insert event
+            else:
+        
+                # build dynamic insert statement components
+                insert3 = insert_statement(user_id, db, table, data)
+                
+                #print insert3[0]
+                #print insert3[1]
+                #print insert3[2][0]
+        
+                cur.execute("""INSERT INTO {tn}({tf})
+                            VALUES ({ih})
+                            ;""".format(tn=table,tf=insert3[0],ih=insert3[1]),insert3[2][0])
+                
+                rdata = cur.lastrowid
+                
+    # connection object using 'with' will rool back db on exception and close on complete
+    except sqlite3.IntegrityError as e:
+        logging.error('%s:%s: SQL IntegrityError: %s' % (script_file,func_name,e))
+        raise e
+        #return False 
+        
+    except sqlite3.OperationalError as e:
+        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+        
+    except sqlite3.ProgrammingError as e:
+        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
+        raise e
+        #return False
+    
+    finally:
+        ##### Test
+        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
+        #    print row
+            
+        conn.close()
+        
+    return rdata

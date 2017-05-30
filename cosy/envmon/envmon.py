@@ -11,7 +11,7 @@ Environmental Monitoring for cosy
 import os.path
 import sys
 import time
-from datetime import datetime
+import datetime
 import json
 import spidev
 
@@ -41,16 +41,16 @@ def ReadChannel(spi, channel):
     return data
     
 
-def ConvertVolts(data, places):
+def ConvertVolts(data):
     """
     Function to convert data to voltage level,
     rounded to specified number of decimal places.
     
     """
-    volts = (data * 3.3) / float(1023)
-    volts = round(volts, places)
+    millivolts = ((data * 3.3) / float(1023))*1000 
+    millivolts = int(millivolts)
     
-    return volts
+    return millivolts
 
 
 def ConvertTemp(data, places):
@@ -74,95 +74,184 @@ def ConvertTemp(data, places):
     temp = round(temp, places)
     
     return temp
+    
 
 
-
-def envmon_data(id6):
+def envmon_data(idst, policy_data, default_event):
     """
     Generate environmental monitoring data.
-    > id6
+    > idst
     < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,id6['user_id'],id6['sysID']))
+    logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
     
+## test event script
     
+    # json policy data
+    policy_data = json.loads(policy_data)
+    
+    # get seconds interval for event refresh
+    pol_int = policy_data['interval']
+    
+    # get event type ID
+    eventcID = default_event['id']
+    
+    # get last event of type ID
+    last_event = data.manage_event(TB_CEVENT, idst['user_id'], method = 'last_event', data = eventcID)
+    
+    # get last event datetime
+    last_event_t = datetime.datetime.strptime(last_event['last_date'], '%Y-%m-%d %H:%M:%S.%f')
+    
+    #print "return with no update if",datetime.datetime.now(),"is less than", last_event_t + datetime.timedelta(seconds=pol_int)
+    
+    if datetime.datetime.now() < last_event_t + datetime.timedelta(seconds=pol_int) :
+        return False
+
+
+## run environment event script
+
+    # start dict
+    env_data = {}
+    
+    env_config = json.loads(default_event['event_action'])
+    
+    # generate envdata
     if SPOOF_DATA :
+        
+        # build data
+        for name, detail in env_config['analogue'].iteritems() :
+            
+            if detail['type'] == 'temp':
+                
+                env_data[name] = {
+                                 'mV':randint(25,55),
+                                 'level':randint(0,1200),
+                                 'degC':randint(20,50),
+                                }
+            
+            elif detail['type'] == 'light':
+                
+                env_data[name] = {
+                                 'mV':randint(25,55),
+                                 'level':randint(0,1200),
+                                }
+                
+            elif detail['type'] == 'moisture':
+                
+                env_data[name] = {
+                                 'mV':randint(25,55),
+                                 'level':randint(0,1200),
+                                }
+            
+            else:
+                env_data[name] = {
+                                 'V':0,
+                                 'level':0,
+                                 'error':'unknown type'
+                                }
     
-        # generate envdata
-        env_data = {
-            'temp1':randint(10,50),
-            'temp2':randint(10,50),
-            'temp3':randint(10,50),
-            'temp4':randint(10,50),
-            'temp5':randint(10,50),
-        }
-    
+    # Get data from sensors
     else: 
         # Open SPI bus
         spi = spidev.SpiDev()
         spi.open(0,0)
         
-        # Define sensor channels
-        light_channel = 0
-        light2_channel = 7
-        temp_channel  = 1
-        temp2_channel  = 2
-        moisture_channel = 3
+        # starting    
+        env_data = []
         
-        # Read the light sensor data
-        light_level = ReadChannel(spi,light_channel)
-        light_volts = ConvertVolts(light_level,2)
-        
-        # Read the light sensor data
-        light2_level = ReadChannel(spi,light2_channel)
-        light2_volts = ConvertVolts(light2_level,2)
-        
-        # Read the moisture sensor data
-        moisture_level = ReadChannel(spi,moisture_channel)
-        moisture_volts = ConvertVolts(moisture_level,2)
-        
-        # Read the temperature sensor data
-        temp_level = ReadChannel(spi,temp_channel)
-        temp_volts = ConvertVolts(temp_level,2)
-        temp       = ConvertTemp(temp_level,2)
-        
-        # Read the temperature sensor data
-        temp2_level = ReadChannel(spi,temp2_channel)
-        temp2_volts = ConvertVolts(temp2_level,2)
-        temp2       = ConvertTemp(temp2_level,2)
-        
-        nowtime     = datetime.now()
-        
-        env_data = {'time':str(nowtime),
-                    'temp1':temp,
-                    'temp2':temp2,
-                    'light1':light_level,
-                    'light2':light2_level,
-                    'moisture':moisture_level,
+        # build data
+        for name, detail in env_config['analogue'].iteritems() :
+            
+            if detail['type'] == 'temp':
+                
+                level = ReadChannel(spi,detail['channel'])
+                
+                env_data[name] = {
+                    'mV':ConvertVolts(level),
+                    'level':level,
+                    'degC':ConvertTemp(level,2),
                 }
+            
+            elif detail['type'] == 'light':
+                
+                level = ReadChannel(spi,detail['channel'])
+                
+                env_data[name] = {
+                    'mV':ConvertVolts(level),
+                    'level':level,
+                }
+                
+            elif detail['type'] == 'moisture':
+                
+                level = ReadChannel(spi,detail['channel'])
+                
+                env_data[name] = {
+                    'mV':ConvertVolts(level),
+                    'level':level,
+                }
+            
+            else:
+                env_data[name] = {
+                    'mV':0,
+                    'level':0,
+                    'error':'unknown type'
+                }
+
     
+    # append meta data
+    env_data['meta'] = {
+         'sysID':idst['sysID'],
+         'timestamp':str(datetime.datetime.now()),
+     }
     
     # data to json
     data_json = json.dumps(env_data)
     
-    # data to event
-    event = {
-            'control_sys':id6['sysID'],
-            'event_config':'1',
-            'parent_event':None,
-            'source':id6['system_type'],
-            'target':13,
-            'data':data_json,
-            'transactionID':None,
-            'priority':1,
-            'link_complete_req':1,
-
-    }
+    # starting conditions
+    parent_event = None
     
-    # log to database
-    data_inserted = data.insert_data(id6['user_id'], TB_CEVENT, event)
+    # target up events
+    if default_event['target_up'] is not None :
+        
+        # data to event
+        event = {
+                'control_sys':idst['sysID'],
+                'event_config':eventcID,
+                'parent_event':parent_event,
+                'source':idst['system_type'],
+                'target':default_event['target_up'],
+                'data':data_json,
+                'transactionID':None,
+                'priority':default_event['base_priority'],
+                'link_complete_req':default_event['complete_req_up'],
+                }
+        
+        # log to database
+        inserted_id = data.manage_event(TB_CEVENT, idst['user_id'], data = event)
+
+        # set up as parent to link to target down event
+        parent_event = inserted_id
+
+    # target down events
+    if default_event['target_down'] is not None :
+        
+        # data to event
+        event = {
+                'control_sys':idst['sysID'],
+                'event_config':eventcID,
+                'parent_event':parent_event,
+                'source':idst['system_type'],
+                'target':default_event['target_down'],
+                'data':data_json,
+                'transactionID':None,
+                'priority':default_event['base_priority'],
+                'link_complete_req':default_event['complete_req_down'],
+                }
+        
+        # log to database
+        inserted_id = data.manage_event(TB_CEVENT, idst['user_id'], data = event)
     
     return True
     

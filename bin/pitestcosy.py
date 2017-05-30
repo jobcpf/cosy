@@ -47,11 +47,11 @@ logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>> Execute control script <<<<<<<<<<
 #print ">>>>>>>>>>>>>>>>>>>>>> ARGO NAUGHTY FERRET BINGLE <<<<<<<<<<<<<<<<<<<<<<<"
 
 # initial conditions
-id6 = None
+idst = None
 token3 = None
 
 # call script run script
-rbool, id6, token3 = crun.cosy_run(id6, token3)
+rbool, idst, token3 = crun.cosy_run(idst, token3)
 
 print 'cosy_run: ',rbool
 

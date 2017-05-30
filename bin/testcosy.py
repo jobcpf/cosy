@@ -27,7 +27,6 @@ import os.path
 #import env.env_init as eni
 #import envmon.envmon as em
 #import api.comm as comm
-
 import cosy_run as crun
 
 ################## Variables #################################### Variables #################################### Variables ##################
@@ -36,7 +35,6 @@ from global_config import logging, now_file, TB_CONTROL
 script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
-
 
 ################## Script ###################################### Script ###################################### Script ####################
 
@@ -47,11 +45,10 @@ logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>> Execute control script <<<<<<<<<<
 #print ">>>>>>>>>>>>>>>>>>>>>> ARGO NAUGHTY FERRET BINGLE <<<<<<<<<<<<<<<<<<<<<<<"
 
 # initial conditions
-id6 = None
+idst = None
 token3 = None
 
 # call script run script
-rbool, id6, token3 = crun.cosy_run(id6, token3)
+rbool, idst, token3, pol_sleep = crun.cosy_run(idst, token3)
 
-print 'cosy_run: ',rbool,id6
-
+print 'cosy_run: ',rbool, idst, pol_sleep

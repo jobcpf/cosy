@@ -35,8 +35,8 @@ if ENV == 1 : # dev environment on squirrel
     
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
-    #BASE_URL = 'http://172.16.32.40:8000'
-    BASE_URL = 'http://www.grid-monitor.co.uk'
+    BASE_URL = 'http://172.16.32.40:8000'
+    #BASE_URL = 'http://www.grid-monitor.co.uk'
     
     ## logging
     use_logging = True
@@ -100,8 +100,18 @@ DB_DATA = 'cosy_data.sqlite' # database for system data
 TB_CONTROL = 'controlunit' # control unit details table
 TB_COMM = 'commsqueue' # control unit details table
 TB_CEVENT = 'controlevent' # control unit details table
+
+TB_POL = 'controlpolicy' # policy data
 TB_CECONF = 'controleventconfig' # control event configuration
 
+# Policies
+POL_REFID = 6 # Daemon run Policy ID
+POL_SLEEP = 300 # (s) Default Daemon run interval
+
+POL_CONF = 5 # Configuration Policy ID
+POL_INT = 86400 # (s) 86400 = 24hrs Default Configuration refresh interval if none passed
+
+POL_ENV = 3 # Environment Policy ID
 
 ### Temp
 #
@@ -134,6 +144,36 @@ TB_CECONF = 'controleventconfig' # control event configuration
 #
 #with open(AUTH_DETAIL,"w") as outfile:
 #    json.dump(auth,outfile)
+
+
+
+#env_config = {
+#    'digital':None,
+#    'analogue':{
+#        'temp1':{
+#                'channel':1,
+#                'type':'temp',
+#                },
+#        'temp2':{
+#                'channel':2,
+#                'type':'temp',                
+#                },
+#        'light1':{
+#                'channel':0,
+#                'type':'light',                
+#                },
+#        'light2':{
+#                'channel':7,
+#                'type':'light',                
+#                },
+#        'moist1':{
+#                'channel':3,
+#                'type':'moisture',                
+#                },
+#        }
+#}
+#print = json.loads(default_event['event_action'])
+
 
 
 ################## Functions ###################################### Functions ###################################### Functions ####################
