@@ -116,7 +116,7 @@ def envmon_data(idst, policy_data, default_event):
     logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
 
     # start dict
-    env_data = {}
+    env_data = {'data':{}}
     
     env_config = json.loads(default_event['event_action'])
     
@@ -136,7 +136,7 @@ def envmon_data(idst, policy_data, default_event):
                     
                     if detail['type'] == 'temp':
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                                         'mV':randint(25,55),
                                         'level':randint(0,1200),
                                         'degC':randint(20,50),
@@ -144,20 +144,20 @@ def envmon_data(idst, policy_data, default_event):
                     
                     elif detail['type'] == 'light':
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                                         'mV':randint(25,55),
                                         'level':randint(0,1200),
                                         }
                         
                     elif detail['type'] == 'moisture':
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                                         'mV':randint(25,55),
                                         'level':randint(0,1200),
                                         }
                     
                     else:
-                        env_data[name] = {
+                        env_data['data'][name] = {
                                         'V':0,
                                         'level':0,
                                         'error':'unknown type'
@@ -185,7 +185,7 @@ def envmon_data(idst, policy_data, default_event):
                         
                         level = ReadChannel(spi,detail['channel'])
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                             'mV':ConvertVolts(level),
                             'level':level,
                             'degC':ConvertTemp(level,2),
@@ -195,7 +195,7 @@ def envmon_data(idst, policy_data, default_event):
                         
                         level = ReadChannel(spi,detail['channel'])
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                             'mV':ConvertVolts(level),
                             'level':level,
                             }
@@ -204,13 +204,13 @@ def envmon_data(idst, policy_data, default_event):
                         
                         level = ReadChannel(spi,detail['channel'])
                         
-                        env_data[name] = {
+                        env_data['data'][name] = {
                             'mV':ConvertVolts(level),
                             'level':level,
                             }
                     
                     else:
-                        env_data[name] = {
+                        env_data['data'][name] = {
                             'mV':0,
                             'level':0,
                             'error':'unknown type'
@@ -222,10 +222,8 @@ def envmon_data(idst, policy_data, default_event):
 ## compile event
     
     # append meta data
-    env_data['meta'] = {
-             'sysID':idst['sysID'],
-             'timestamp':str(datetime.datetime.now()),
-            }
+    env_data['sysID'] = idst['sysID']
+    env_data['timestamp'] = str(datetime.datetime.now())
     
     # data to json
     data_json = json.dumps(env_data)
