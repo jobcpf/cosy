@@ -154,6 +154,8 @@ def comm_sync(idst, token3):
     # api call for each GET in list
     if comms_putpostget[2]:
         
+        print comms_putpostget[2]
+        
         # make API call
         rbool, rdata, token3 = apac.api_call(api_comms_call, token3 = token3, method = 'GET', json = comms_putpostget[2])
         

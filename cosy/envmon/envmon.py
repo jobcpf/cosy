@@ -80,12 +80,12 @@ def ConvertTemp(data, places):
 def envmon_data(idst, policy_data, default_event):
     """
     Generate environmental monitoring data.
+    -- Covered by error handling above function call --
     > idst
     < True, False
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
     
 ## test event script
     
@@ -101,16 +101,19 @@ def envmon_data(idst, policy_data, default_event):
     # get last event of type ID
     last_event = data.manage_event(TB_CEVENT, idst['user_id'], method = 'last_event', data = eventcID)
     
-    # get last event datetime
-    last_event_t = datetime.datetime.strptime(last_event['last_date'], '%Y-%m-%d %H:%M:%S.%f')
-    
-    #print "return with no update if",datetime.datetime.now(),"is less than", last_event_t + datetime.timedelta(seconds=pol_int)
-    
-    if datetime.datetime.now() < last_event_t + datetime.timedelta(seconds=pol_int) :
-        return False
-
+    # test if last event present
+    if last_event is not None:
+        
+        # get last event datetime
+        last_event_t = datetime.datetime.strptime(last_event['last_date'], '%Y-%m-%d %H:%M:%S.%f')
+        
+        #print "return with no update if",datetime.datetime.now(),"is less than", last_event_t + datetime.timedelta(seconds=pol_int)
+        
+        if datetime.datetime.now() < last_event_t + datetime.timedelta(seconds=pol_int) :
+            return False
 
 ## run environment event script
+    logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
 
     # start dict
     env_data = {}
@@ -120,91 +123,109 @@ def envmon_data(idst, policy_data, default_event):
     # generate envdata
     if SPOOF_DATA :
         
-        # build data
-        for name, detail in env_config['analogue'].iteritems() :
+        # iterate analogue sensors
+        for device in env_config['analogue'] :
             
-            if detail['type'] == 'temp':
+            for key, config in device.iteritems() :
                 
-                env_data[name] = {
-                                 'mV':randint(25,55),
-                                 'level':randint(0,1200),
-                                 'degC':randint(20,50),
-                                }
-            
-            elif detail['type'] == 'light':
+                #print "spi port", config['io']['port']
+                #print "spi device", config['io']['device']
                 
-                env_data[name] = {
-                                 'mV':randint(25,55),
-                                 'level':randint(0,1200),
-                                }
-                
-            elif detail['type'] == 'moisture':
-                
-                env_data[name] = {
-                                 'mV':randint(25,55),
-                                 'level':randint(0,1200),
-                                }
-            
-            else:
-                env_data[name] = {
-                                 'V':0,
-                                 'level':0,
-                                 'error':'unknown type'
-                                }
+                # build data
+                for name, detail in config['sensors'].iteritems() :
+                    
+                    if detail['type'] == 'temp':
+                        
+                        env_data[name] = {
+                                        'mV':randint(25,55),
+                                        'level':randint(0,1200),
+                                        'degC':randint(20,50),
+                                        }
+                    
+                    elif detail['type'] == 'light':
+                        
+                        env_data[name] = {
+                                        'mV':randint(25,55),
+                                        'level':randint(0,1200),
+                                        }
+                        
+                    elif detail['type'] == 'moisture':
+                        
+                        env_data[name] = {
+                                        'mV':randint(25,55),
+                                        'level':randint(0,1200),
+                                        }
+                    
+                    else:
+                        env_data[name] = {
+                                        'V':0,
+                                        'level':0,
+                                        'error':'unknown type'
+                                        }
     
     # Get data from sensors
     else: 
-        # Open SPI bus
-        spi = spidev.SpiDev()
-        spi.open(0,0)
         
-        # starting    
-        env_data = []
+        # iterate analogue sensors
+        for device in env_config['analogue'] :
+            
+            for key, config in device.iteritems() :
+                
+                #print "spi port", config['io']['port']
+                #print "spi device", config['io']['device']
+                
+                # Open SPI bus
+                spi = spidev.SpiDev()
+                spi.open(config['io']['port'],config['io']['device'])
+                
+                # build data
+                for name, detail in config['sensors'].iteritems() :
+                    
+                    if detail['type'] == 'temp':
+                        
+                        level = ReadChannel(spi,detail['channel'])
+                        
+                        env_data[name] = {
+                            'mV':ConvertVolts(level),
+                            'level':level,
+                            'degC':ConvertTemp(level,2),
+                            }
+                    
+                    elif detail['type'] == 'light':
+                        
+                        level = ReadChannel(spi,detail['channel'])
+                        
+                        env_data[name] = {
+                            'mV':ConvertVolts(level),
+                            'level':level,
+                            }
+                        
+                    elif detail['type'] == 'moisture':
+                        
+                        level = ReadChannel(spi,detail['channel'])
+                        
+                        env_data[name] = {
+                            'mV':ConvertVolts(level),
+                            'level':level,
+                            }
+                    
+                    else:
+                        env_data[name] = {
+                            'mV':0,
+                            'level':0,
+                            'error':'unknown type'
+                            }
         
-        # build data
-        for name, detail in env_config['analogue'].iteritems() :
-            
-            if detail['type'] == 'temp':
-                
-                level = ReadChannel(spi,detail['channel'])
-                
-                env_data[name] = {
-                    'mV':ConvertVolts(level),
-                    'level':level,
-                    'degC':ConvertTemp(level,2),
-                }
-            
-            elif detail['type'] == 'light':
-                
-                level = ReadChannel(spi,detail['channel'])
-                
-                env_data[name] = {
-                    'mV':ConvertVolts(level),
-                    'level':level,
-                }
-                
-            elif detail['type'] == 'moisture':
-                
-                level = ReadChannel(spi,detail['channel'])
-                
-                env_data[name] = {
-                    'mV':ConvertVolts(level),
-                    'level':level,
-                }
-            
-            else:
-                env_data[name] = {
-                    'mV':0,
-                    'level':0,
-                    'error':'unknown type'
-                }
-
+                # close spi bus
+                spi.close()
+    
+## compile event
     
     # append meta data
     env_data['meta'] = {
-         'sysID':idst['sysID'],
-         'timestamp':str(datetime.datetime.now()),
-     }
+             'sysID':idst['sysID'],
+             'timestamp':str(datetime.datetime.now()),
+            }
     
     # data to json
     data_json = json.dumps(env_data)

@@ -111,7 +111,7 @@ def get_new_token(token3 = None, user_id = False):
                 return (False, 'db insert error')
             
         else:
-            logging.error('%s:%s: No valid JSON data retrieved for API Token' % (script_file,func_name,user_details['user']))
+            logging.error('%s:%s: No valid JSON data API Token retrieved for %s' % (script_file,func_name,user_details['user']))
             return (False, r.headers['Content-Type'])
         
     else:

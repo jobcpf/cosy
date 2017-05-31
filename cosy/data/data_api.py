@@ -225,7 +225,7 @@ def get_api_config(user_id, table, init=None, api_id=None):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Get API token from db.auth' % (script_file,func_name))
+    logging.debug('%s:%s: Get API config from db.apiaccessconfig' % (script_file,func_name))
 
     try :
         # connect to / create db

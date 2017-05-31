@@ -51,7 +51,7 @@ idst = None
 token3 = None
 
 # call script run script
-rbool, idst, token3 = crun.cosy_run(idst, token3)
+rbool, idst, token3, pol_sleep = crun.cosy_run(idst, token3)
 
 print 'cosy_run: ',rbool
 

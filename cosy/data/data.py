@@ -101,7 +101,7 @@ def manage_control(table, sysID = None, method = None, data = None):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Manage control unit details in table: %s' % (script_file,func_name,table))
+    logging.debug('%s:%s: Manage control unit method: %s' % (script_file,func_name,method))
 
     try :
         
@@ -210,7 +210,7 @@ def manage_control(table, sysID = None, method = None, data = None):
 #    return idst
 
 
-def manage_comms(idst, data_json = False, method = False):
+def manage_comms(idst, data_json = False, method = None):
     """
     Get comms for target system
     > idst, [API sent confirmation transactionID list]
@@ -220,7 +220,7 @@ def manage_comms(idst, data_json = False, method = False):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Manage communications and events.' % (script_file,func_name))
+    logging.debug('%s:%s: Manage communications data method %s' % (script_file,func_name,method))
 
     try :
         # connect to / create db
@@ -517,7 +517,7 @@ def manage_event(table, user_id, method = None, data = None):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-    logging.debug('%s:%s: Manage events in table %s' % (script_file,func_name, table))
+    logging.debug('%s:%s: Manage event method %s (%s)' % (script_file,func_name,method,table))
 
     try :
         # connect to / create db

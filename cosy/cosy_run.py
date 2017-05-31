@@ -93,7 +93,8 @@ def cosy_run(idst = None, token3 = None):
             logging.debug('%s:%s: Refresh configuration for u/sys %s/%s' % (script_file,func_name,idst['user_id'],idst['sysID']))
             ## refresh environment config
             rbool, idst, token3 = eni.config_environment(idst, token3, api_update = True)
-        rbool, idst, token3 = eni.config_environment(idst, token3, api_update = True)
+        
+        #rbool, idst, token3 = eni.config_environment(idst, token3, api_update = True)
         
 ## RUN ENVIRONMENT MODULE
         
