@@ -18,7 +18,7 @@ import json
 ENV = None
 
 # get script file path to determine environment
-if 'squirrel' in os.path.dirname(os.path.realpath(__file__)) :
+if ENV is None and 'squirrel' in os.path.dirname(os.path.realpath(__file__)) :
     print "Executing on Squirrel dev environment"
     ENV = 1
 
@@ -36,7 +36,6 @@ if ENV == 1 : # dev environment on squirrel
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
     BASE_URL = 'http://172.16.32.40:8000'
-    #BASE_URL = 'http://www.grid-monitor.co.uk'
     
     ## logging
     use_logging = True
@@ -46,7 +45,29 @@ if ENV == 1 : # dev environment on squirrel
     
     ## Temp / Test
     SPOOF_DATA = True
+
+elif ENV == 2 : # dev environment on squirrel using Apache
     
+    ## Database - sqlite
+    DB_PATH = '/data/datashare'
+    SYS_DETAIL = '/home/squirrel/dev/cosy/script/detail.json'
+    SYS_SELECT = 0
+    AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
+    AUTH_SELECT = 0
+    
+    ## Path & URL
+    PID_FILE = '/var/mylog/daemon-cosy.pid'
+    BASE_URL = 'http://www.grid-monitor.co.uk'
+    
+    ## logging
+    use_logging = True
+    logdir = '/home/squirrel/dev/squirrel_dev/cosy_dev'
+    logfile = "%s/cosydev.log" % logdir
+    logging.basicConfig(filename=logfile,level=logging.DEBUG)
+    
+    ## Temp / Test
+    SPOOF_DATA = True
+
 else : # pi environment
     
     ## Database - sqlite

@@ -123,12 +123,16 @@ def api_call(api_call, user_id = False, token3 = None, method = None, json = Fal
             return (False, r.status_code, token3)
                         
         if r.headers['Content-Type'] in ['application/json'] :
-            
             # return data
             return (True,r.json(),token3)
             
         else:
             logging.error('%s:%s: No valid JSON data retrieved from API' % (script_file,func_name))
+            #print "ERROR >>>>>>>>>>>>>", api_call
+            #print 'r.request.headers:',r.request.headers
+            #print 'r.headers:',r.headers
+            #print 'r.content:',r.content
+            #exit(1)
             return (False, r.status_code, token3)
     
     except requests.exceptions.ConnectionError as e:
