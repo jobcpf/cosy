@@ -97,9 +97,9 @@ def api_call(api_call, user_id = False, token3 = None, method = None, json = Fal
                 return (False, token3_or_error, None)
             
         # capture status codes from all calls
-        if r.status_code == requests.codes.unauthorized:
-            logging.error('%s:%s: API data retrieval unauthorised with token. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
-            print api_call, r.json()
+        if r.status_code == requests.codes.unauthorized: # 401
+            logging.error('%s:%s: API unauthorised with token. Status Code: %s, API Call: %s' % (script_file,func_name,r.status_code,api_call))
+            #print api_call, r.json()
             return (False, r.status_code, token3)
         
         elif r.status_code == requests.codes.internal_server_error:

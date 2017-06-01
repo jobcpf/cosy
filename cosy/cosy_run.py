@@ -146,6 +146,11 @@ def cosy_run(idst = None, token3 = None):
             # push status of control unit to API
             rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
             
+            # if status_string has errors and not authed to update control unti at API (catch mid daemon run change in server registered control unit)
+            if not rbool and rdata == 403:
+                # refresh auth
+                rbool, idst, token3 = eni.get_idst(TB_CONTROL,True)
+            
             return (False, idst, token3, pol_sleep)
             
         # if status_bool was zero, now OK - reset
