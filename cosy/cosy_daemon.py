@@ -132,9 +132,35 @@ class Daemon:
 		"""
 		self.stop()
 		self.start()
-
+	
+	def status(self):
+		"""
+		Status method from forum post: #14 Guilherme Gall Posted on 2009-01-23@00:45
+		
+		"""
+		try:
+			pf = file(self.pidfile, 'r')
+			pid = int(pf.read().strip())
+			pf.close()
+		except IOError:
+			pid = None
+		
+		try:
+			procfile = file("/proc/%d/status" % pid, 'r')
+			name = procfile.readline()
+			procfile.close()
+		except IOError:
+			sys.stdout.write("there is not a process with the PID specified in %s\n" % self.pidfile)
+			sys.exit(0)
+		except TypeError:
+			sys.stdout.write("pidfile %s does not exist\n" % self.pidfile)
+			sys.exit(0)
+		
+		sys.stdout.write("The Process %s with the PID %d is running\n" % (name,pid))
+		
 	def run(self):
 		"""
 		You should override this method when you subclass Daemon. It will be called after the process has been
 		daemonized by start() or restart().
 		"""
+		

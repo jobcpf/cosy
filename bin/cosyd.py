@@ -62,14 +62,15 @@ if __name__ == "__main__":
         if 'start' == sys.argv[1]:
             #logging.debug('%s:%s: Starting COSY Daemon' % (script_file,func_name))
             daemon.start()
-            
         elif 'stop' == sys.argv[1]:
             #logging.debug('%s:%s: Stopping COSY Daemon' % (script_file,func_name))
             daemon.stop()
         elif 'restart' == sys.argv[1]:
             #logging.debug('%s:%s: Restarting COSY Daemon' % (script_file,func_name))
             daemon.restart()
-            
+        elif 'status' == sys.argv[1]:
+            #logging.debug('%s:%s: Status of COSY Daemon' % (script_file,func_name))
+            daemon.status()
         elif 'test' == sys.argv[1]:
             #logging.debug('%s:%s: Starting COSY Daemon in TEST mode (foreground)' % (script_file,func_name))
             daemon.run()
