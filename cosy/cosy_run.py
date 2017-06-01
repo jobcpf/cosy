@@ -42,6 +42,7 @@ def cosy_run(idst = None, token3 = None):
     
     """
     func_name = sys._getframe().f_code.co_name # Defines name of function for logging
+    pol_sleep = POL_SLEEP
     
     # starting status
     status_string = ""
@@ -54,7 +55,7 @@ def cosy_run(idst = None, token3 = None):
         
     # run processes for idst
     if idst is not None:
-        logging.debug('%s:%s: >>>>>>>>>>>>>> Run for u/sys %s/%s <<<<<<<<<<<<<<' % (script_file,func_name,idst['user_id'],idst['sysID']))
+        logging.debug('%s:%s: >>>>>>>>>>>>>> In-Memory Credentials for u/sys %s/%s <<<<<<<<<<<<<<' % (script_file,func_name,idst['user_id'],idst['sysID']))
         
 ## GET POLICIES
         
@@ -69,7 +70,6 @@ def cosy_run(idst = None, token3 = None):
             pol_sleep = daemon_policy['interval']
         except (KeyError, IndexError, TypeError, ValueError,) as e :
             logging.error('%s:%s: Error retrieving daemon policy for u/sys %s/%s - %s' % (script_file,func_name,idst['user_id'],idst['sysID'],e))
-            pol_sleep = POL_SLEEP
             
             status_string += "Daemon Policy Error (used default), "
         
@@ -117,8 +117,6 @@ def cosy_run(idst = None, token3 = None):
             logging.error('%s:%s: Error retrieving environment policy for u/sys %s/%s - %s' % (script_file,func_name,idst['user_id'],idst['sysID'],e))
             
             status_string += "Environmental Policy Error (aborted), "
-        
-        
 
         
 ## RUN COMMS UPDATE
@@ -126,7 +124,7 @@ def cosy_run(idst = None, token3 = None):
         rbool, comm_result, token3 = comm.comm_sync(idst, token3)
         
         if not rbool:
-            status_string += "Comms error, "
+            status_string += "Comms error: %s, " % comm_result
         
         # not authorised on GET for sysID - re-init container
         if comm_result == 403 :
@@ -147,7 +145,9 @@ def cosy_run(idst = None, token3 = None):
             
             # push status of control unit to API
             rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
-        
+            
+            return (False, idst, token3, pol_sleep)
+            
         # if status_bool was zero, now OK - reset
         elif not idst['status_bool']: 
             ## set status to OK
@@ -156,7 +156,11 @@ def cosy_run(idst = None, token3 = None):
             # push status of control unit to API
             rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
         
-    return (True, idst, token3, pol_sleep)
+        
+        return (True, idst, token3, pol_sleep)
+            
+    else: # idst is None:
+        return (False, idst, token3, pol_sleep)
 
 
 

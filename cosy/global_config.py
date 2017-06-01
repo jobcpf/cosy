@@ -15,7 +15,7 @@ import json
 
 ################## Environment #################################### Environment #################################### Environment ##################
 
-ENV = None
+ENV = 2 #None
 
 # get script file path to determine environment
 if ENV is None and 'squirrel' in os.path.dirname(os.path.realpath(__file__)) :

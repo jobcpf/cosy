@@ -74,13 +74,13 @@ def api_call(api_call, user_id = False, token3 = None, method = None, json = Fal
         if token3 is None or get_token:
             
             # get new token (refresh > u:p)
-            rbool, token3 = apa.get_new_token(token3 = token3, user_id = user_id) # get new token and add to db
+            rbool, token3_or_error = apa.get_new_token(token3 = token3, user_id = user_id) # get new token and add to db
             
             # check if token returned
             if rbool:
                 
                 # build auth header
-                auth_header = {'Authorization': 'Bearer %s' % token3[1]}
+                auth_header = {'Authorization': 'Bearer %s' % token3_or_error[1]}
                 
                 # make request
                 if method == 'GET' :
@@ -94,7 +94,7 @@ def api_call(api_call, user_id = False, token3 = None, method = None, json = Fal
                     
             else:
                 logging.error('%s:%s: Could not retrieve new token. Error: %s' % (script_file,func_name,token3))
-                return (False, token3, None)
+                return (False, token3_or_error, None)
             
         # capture status codes from all calls
         if r.status_code == requests.codes.unauthorized:

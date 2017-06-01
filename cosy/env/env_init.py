@@ -285,7 +285,9 @@ def get_idst(TB_CONTROL, refresh = False):
         # push status of control unit to API (test API)
         rbool, rdata, token3 = apac.api_call(idst['URI'], token3 = token3, method = 'PUT', json = idst)
         
-        return (True, idst, token3)
+        # test if server not available
+        if rbool:
+            return (True, idst, token3)
     
     # catch all re-init all
     rbool, idst, token3 = init_environment()

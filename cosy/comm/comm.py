@@ -101,6 +101,9 @@ def comm_sync(idst, token3):
             
             rmsg += "PUT, "
             
+        elif rdata != 404:
+            # exit sync and return response if error
+            return (rbool, rdata, token3)
     
 ### API PUT (UPDATE) (MULTIPLE by sysID, transactionID)
 #    
@@ -130,7 +133,11 @@ def comm_sync(idst, token3):
             update_list.append((rdata['URI'],rdata['complete'],rdata['control_sys'],rdata['transactionID']))
             
             rmsg += "POST, "
-
+        
+        elif rdata != 404:
+            # exit sync and return response if error
+            return (rbool, rdata, token3)
+        
 ## API POST (MULTIPLE by sysID, transactionID)
     #...
 
@@ -165,7 +172,11 @@ def comm_sync(idst, token3):
                 update_list.append((response['URI'],response['complete'],response['control_sys'],response['transactionID']))
                 
             rmsg += "GET (by sysID), "
-                
+        
+        elif rdata != 404:
+            # exit sync and return response if error
+            return (rbool, rdata, token3)
+        
 ## CONFIRM API Updated
 
     if update_list :

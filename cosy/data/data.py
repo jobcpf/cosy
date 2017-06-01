@@ -86,7 +86,7 @@ def insert_data(user_id, table, json):
     return True
 
 
-def manage_control(table, sysID = None, method = None, data = None):
+def manage_control(table, sysID = None, method = 'Get idst', data = None):
     """
     Enforce 'self' bool for control unit
     > user_id, table, sysID, [status]
@@ -158,56 +158,6 @@ def manage_control(table, sysID = None, method = None, data = None):
         conn.close()
         
     return idst
-
-
-#def get_control(table):
-#    """
-#    Get control unit and associated userID
-#    > table
-#    < idst, False
-#    idst:{'status': u'OK',
-#          'user_id': 1,
-#          'status_bool': 1,
-#          'URI': u'http://172.16.32.40:8000/api/0.1/env/reg/710011/',
-#          'sysID': 710011,
-#          'system_type': 31,
-#          'last_config: [date],}
-#    
-#    """
-#    func_name = sys._getframe().f_code.co_name # Defines name of function for logging
-#    logging.debug('%s:%s: Get active control unit and associated user id from table: %s' % (script_file,func_name,table))
-#
-#    try :
-#        # connect to / create db
-#        conn = create_connection(db)
-#        
-#        # over write row_factory to return JSON
-#        conn.row_factory = dict_factory
-#        
-#        cur = conn.cursor()
-#        
-#        # get data
-#        cur.execute("SELECT user_id, sysID, system_type, status_bool, status, URI, last_config from {tn} WHERE self_bool = 1;".format(tn=table))
-#        idst = cur.fetchone()
-#            
-#    except sqlite3.OperationalError as e:
-#        logging.debug('%s:%s: SQLite Operational Error: %s' % (script_file,func_name,e))
-#        #raise e
-#        return False
-#
-#    except sqlite3.ProgrammingError as e:
-#        logging.error('%s:%s: SQLite Programming Error: %s' % (script_file,func_name,e))
-#        raise e
-#        #return False
-#    
-#    finally:
-#        ##### Test
-#        #for row in conn.execute('SELECT * FROM {tn}'.format(tn=table)):
-#        #    print row
-#            
-#        conn.close()
-#        
-#    return idst
 
 
 def manage_comms(idst, data_json = False, method = None):

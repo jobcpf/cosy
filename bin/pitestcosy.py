@@ -43,8 +43,8 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 # CRONTAB: */5 * * * * ~/dev/cosy/bin.cosy.py >/dev/null
 
 func_name = None
-logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>> Execute control script <<<<<<<<<<<<<<<<<<<<<<<<' % (script_file,func_name))
-#print ">>>>>>>>>>>>>>>>>>>>>> ARGO NAUGHTY FERRET BINGLE <<<<<<<<<<<<<<<<<<<<<<<"
+logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>> Control Script Start <<<<<<<<<<<<<<<<<<<<<<<<' % (script_file,func_name))
+print ">>>>>>>>>>>>>>>>>>>>>> Control Script Start <<<<<<<<<<<<<<<<<<<<<<<"
 
 # initial conditions
 idst = None
@@ -53,5 +53,7 @@ token3 = None
 # call script run script
 rbool, idst, token3, pol_sleep = crun.cosy_run(idst, token3)
 
-print 'cosy_run: ',rbool
 
+print 'cosy_run: ',rbool, idst, pol_sleep
+print ">>>>>>>>>>>>>>>>>>>>>> Control Script End <<<<<<<<<<<<<<<<<<<<<<<"
+logging.debug('%s:%s: >>>>>>>>>>>>>>>>>>>>>>>> Control Script End <<<<<<<<<<<<<<<<<<<<<<<<' % (script_file,func_name))
