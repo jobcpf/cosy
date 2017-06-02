@@ -29,6 +29,27 @@ script_file = "%s: %s" % (now_file,os.path.basename(__file__))
 ################## Functions ###################################### Functions ###################################### Functions ####################
 
 
+def ragcalc(level, detail):
+    """
+    Function to calculate RAG
+    
+    """
+    if detail['red'] > detail['amber'] :
+        if level > detail['red'] :
+            return 3
+        elif level > detail['amber'] :
+            return 2
+        else:
+            return 1
+    else:
+        if level < detail['red'] :
+            return 3
+        elif level < detail['amber'] :
+            return 2
+        else:
+            return 1
+        
+
 def ReadChannel(spi, channel):
     """
     Function to read SPI data from MCP3008 chip
@@ -116,7 +137,15 @@ def envmon_data(idst, policy_data, default_event):
     logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
 
     # start dict
-    env_data = {'data':{}}
+    env_data = {
+            'sysID':idst['sysID'],
+            'timestamp':str(datetime.datetime.now()),
+            'data':{},
+            }
+    
+    # append meta data
+    #env_data['sysID'] = idst['sysID']
+    #env_data['timestamp'] = str(datetime.datetime.now())
     
     env_config = json.loads(default_event['event_action'])
     
@@ -126,42 +155,60 @@ def envmon_data(idst, policy_data, default_event):
         # iterate analogue sensors
         for device in env_config['analogue'] :
             
-            for key, config in device.iteritems() :
+            #print "spi port", device['io']['port']
+            #print "spi device", device['io']['device']
+            
+            # build data
+            for name, detail in device['sensors'].iteritems() :
                 
-                #print "spi port", config['io']['port']
-                #print "spi device", config['io']['device']
+                if detail['type'] == 'temp':
+                    
+                    level = randint(0,1200)
+                    
+                    env_data['data'][name] = {
+                                    'mV':randint(25,55),
+                                    'level':level,
+                                    'prval':randint(20,50),
+                                    'prunit':'degC',
+                                    'type':detail['type'],
+                                    'rag':ragcalc(level,detail),
+                                    }
                 
-                # build data
-                for name, detail in config['sensors'].iteritems() :
+                elif detail['type'] == 'light':
                     
-                    if detail['type'] == 'temp':
-                        
-                        env_data['data'][name] = {
-                                        'mV':randint(25,55),
-                                        'level':randint(0,1200),
-                                        'degC':randint(20,50),
-                                        }
+                    level = randint(0,1200)
                     
-                    elif detail['type'] == 'light':
-                        
-                        env_data['data'][name] = {
-                                        'mV':randint(25,55),
-                                        'level':randint(0,1200),
-                                        }
-                        
-                    elif detail['type'] == 'moisture':
-                        
-                        env_data['data'][name] = {
-                                        'mV':randint(25,55),
-                                        'level':randint(0,1200),
-                                        }
+                    env_data['data'][name] = {
+                                    'mV':randint(25,55),
+                                    'level':level,
+                                    'prval':randint(20,50),
+                                    'prunit':'level',
+                                    'type':detail['type'],
+                                    'rag':ragcalc(level,detail),
+                                    }
                     
-                    else:
-                        env_data['data'][name] = {
-                                        'V':0,
-                                        'level':0,
-                                        'error':'unknown type'
-                                        }
+                elif detail['type'] == 'moisture':
+                    
+                    level = randint(0,1200)
+                    
+                    env_data['data'][name] = {
+                                    'mV':randint(25,55),
+                                    'level':level,
+                                    'prval':randint(20,50),
+                                    'prunit':'level',
+                                    'type':detail['type'],
+                                    'rag':ragcalc(level,detail),
+                                    }
+                
+                else:
+                    env_data['data'][name] = {
+                                    'mV':0,
+                                    'level':0,
+                                    'prval':0,
+                                    'prunit':None,
+                                    'type':'unknown',
+                                    'rag':0,
+                                    }
     
     # Get data from sensors
     else: 
@@ -169,61 +216,69 @@ def envmon_data(idst, policy_data, default_event):
         # iterate analogue sensors
         for device in env_config['analogue'] :
             
-            for key, config in device.iteritems() :
+            #print "spi port", device['io']['port']
+            #print "spi device", device['io']['device']
+            
+            # Open SPI bus
+            spi = spidev.SpiDev()
+            spi.open(device['io']['port'],device['io']['device'])
+            
+            # build data
+            for name, detail in device['sensors'].iteritems() :
                 
-                #print "spi port", config['io']['port']
-                #print "spi device", config['io']['device']
+                if detail['type'] == 'temp':
+                    
+                    level = ReadChannel(spi,detail['channel'])
+                    
+                    env_data['data'][name] = {
+                        'mV':ConvertVolts(level),
+                        'level':level,
+                        'prval':ConvertTemp(level,2),
+                        'prunit':'degC',
+                        'type':detail['type'],
+                        'rag':ragcalc(level,detail),
+                        }
                 
-                # Open SPI bus
-                spi = spidev.SpiDev()
-                spi.open(config['io']['port'],config['io']['device'])
+                elif detail['type'] == 'light':
+                    
+                    level = ReadChannel(spi,detail['channel'])
+                    
+                    env_data['data'][name] = {
+                        'mV':ConvertVolts(level),
+                        'level':level,
+                        'prval':level,
+                        'prunit':'level',
+                        'type':detail['type'],
+                        'rag':ragcalc(level,detail),
+                        }
+                    
+                elif detail['type'] == 'moisture':
+                    
+                    level = ReadChannel(spi,detail['channel'])
+                    
+                    env_data['data'][name] = {
+                        'mV':ConvertVolts(level),
+                        'level':level,
+                        'prval':level,
+                        'prunit':'level',
+                        'type':detail['type'],
+                        'rag':ragcalc(level,detail),
+                        }
                 
-                # build data
-                for name, detail in config['sensors'].iteritems() :
-                    
-                    if detail['type'] == 'temp':
-                        
-                        level = ReadChannel(spi,detail['channel'])
-                        
-                        env_data['data'][name] = {
-                            'mV':ConvertVolts(level),
-                            'level':level,
-                            'degC':ConvertTemp(level,2),
-                            }
-                    
-                    elif detail['type'] == 'light':
-                        
-                        level = ReadChannel(spi,detail['channel'])
-                        
-                        env_data['data'][name] = {
-                            'mV':ConvertVolts(level),
-                            'level':level,
-                            }
-                        
-                    elif detail['type'] == 'moisture':
-                        
-                        level = ReadChannel(spi,detail['channel'])
-                        
-                        env_data['data'][name] = {
-                            'mV':ConvertVolts(level),
-                            'level':level,
-                            }
-                    
-                    else:
-                        env_data['data'][name] = {
-                            'mV':0,
-                            'level':0,
-                            'error':'unknown type'
-                            }
+                else:
+                    env_data['data'][name] = {
+                        'mV':0,
+                        'level':0,
+                        'prval':0,
+                        'prunit':None,
+                        'type':'unknown',
+                        'rag':0,
+                        }
         
-                # close spi bus
-                spi.close()
+            # close spi bus
+            spi.close()
     
 ## compile event
-    
-    # append meta data
-    env_data['sysID'] = idst['sysID']
-    env_data['timestamp'] = str(datetime.datetime.now())
     
     # data to json
     data_json = json.dumps(env_data)
