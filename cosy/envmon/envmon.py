@@ -15,6 +15,7 @@ import datetime
 import json
 import spidev
 
+
 # temp
 from random import randint
 
@@ -135,17 +136,13 @@ def envmon_data(idst, policy_data, default_event):
 
 ## run environment event script
     logging.debug('%s:%s: Measure Environmental Data for user id: %s control unit id: %s' % (script_file,func_name,idst['user_id'],idst['sysID']))
-
+    
     # start dict
     env_data = {
             'sysID':idst['sysID'],
-            'timestamp':str(datetime.datetime.now()),
+            'timestamp':{"$date":datetime.datetime.utcnow().isoformat()}, # MongoDB/BSON loadable date format
             'data':{},
             }
-    
-    # append meta data
-    #env_data['sysID'] = idst['sysID']
-    #env_data['timestamp'] = str(datetime.datetime.now())
     
     env_config = json.loads(default_event['event_action'])
     
