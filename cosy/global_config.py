@@ -31,7 +31,7 @@ if ENV == 1 : # dev environment on squirrel
     SYS_DETAIL = '/home/squirrel/dev/cosy/script/detail.json'
     SYS_SELECT = 0
     AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
-    AUTH_SELECT = 0
+    AUTH_SELECT = 2 # which auth details to use from list
     
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
@@ -53,7 +53,7 @@ elif ENV == 2 : # dev environment on squirrel using Apache
     SYS_DETAIL = '/home/squirrel/dev/cosy/script/detail.json'
     SYS_SELECT = 0
     AUTH_DETAIL = '/home/squirrel/dev/cosy/script/auth.json'
-    AUTH_SELECT = 0
+    AUTH_SELECT = 2 # which auth details to use from list
     
     ## Path & URL
     PID_FILE = '/var/mylog/daemon-cosy.pid'
@@ -75,7 +75,7 @@ else : # pi environment
     SYS_DETAIL = '/home/pi/cosy/script/detail.json'
     SYS_SELECT = 1
     AUTH_DETAIL = '/home/pi/cosy/script/auth.json'
-    AUTH_SELECT = 1
+    AUTH_SELECT = 0 # which auth details to use from list
     
     ## Path & URL
     PID_FILE = '/tmp/daemon-cosy.pid'

@@ -79,7 +79,7 @@ def get_new_token(token3 = None, user_id = False):
             # get user5 for authed user from db.user
             user_details = datp.get_api_user(user_id = user_id)
         
-        # check for user details
+        # check for user details - TODO: no function datp.init_user()
         if not user_details :
             logging.error('%s:%s: No user exists to retrieve token' % (script_file,func_name))
             user_details = datp.init_user()
